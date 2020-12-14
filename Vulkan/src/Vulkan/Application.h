@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Window.h"
+#include "Vulkan\Renderer\Vulkan.h"
+
 struct GLFWwindow;
 
 class Application
@@ -15,7 +18,10 @@ public:
 	static Application* CreateApplication() { return new Application(); }
 
 private:
-	GLFWwindow* window;
+	std::unique_ptr<Window> m_Window;
+	std::unique_ptr<Vulkan> m_Vulkan;
+
+	bool m_Running = true;
 
 private:
 	static Application* s_Application;

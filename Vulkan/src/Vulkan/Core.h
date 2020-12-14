@@ -1,4 +1,5 @@
 #pragma once
+#include "Log.h"
 
 #ifdef ENABLE_ASSERT
 	#define VK_ASSERT(x, ...) { if(!(x)) { VK_CORE_ERROR("Assertion Failed : {0}", __VA_ARGS__); __debugbreak(); } }
