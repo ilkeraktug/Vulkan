@@ -3,6 +3,8 @@
 
 #include "Vulkan\Core.h"
 
+GLFWwindow* Window::m_Window = nullptr;
+
 Window::Window(const WindowProps& windowProp)
 {
 	Init(windowProp);

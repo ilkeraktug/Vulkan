@@ -26,13 +26,13 @@ public:
 	void SetVsync(bool vsync);
 	inline bool IsVsync() const { return m_WindowData.IsVsync; }
 
-	inline GLFWwindow* GetWindow() const { return m_Window; }
+	inline static void* GetWindow() { return m_Window; }
 
 private:
 	void Init(const WindowProps& windowProp);
 	void Shutdown();
 private:
-	GLFWwindow* m_Window;
+	static GLFWwindow* m_Window;
 
 	struct WindowData
 	{
