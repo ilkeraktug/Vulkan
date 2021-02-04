@@ -4,6 +4,8 @@
 #include <GLFW\glfw3.h>
 #include <GLFW\glfw3native.h>
 
+#include "Shader.h"
+
 class Vulkan
 {
 public:
@@ -18,6 +20,12 @@ private:
 	bool hasRequiredExtensions();
 
 	void SelectSwapChainObject();
+	void createSwapChainImageView();
+
+
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 private:
 	struct QFamilyIndex
 	{
@@ -35,7 +43,16 @@ private:
 	};
 
 	std::vector<const char*> m_DeviceExtensions;
-	std::tuple<VkExtent2D, VkSurfaceFormatKHR, VkPresentModeKHR> swapChainObject;
+
+	std::vector<VkImage> m_SwapchainImages;
+	std::vector<VkImageView> m_SwapchainImageView;
+
+	std::tuple<VkExtent2D, VkSurfaceFormatKHR, VkPresentModeKHR> m_SwapChainObject;
+
+	VkDebugUtilsMessengerEXT m_DebugMessenger;
+	const std::vector<const char*> m_ValidationLayers = {
+	"VK_LAYER_KHRONOS_validation"
+	};
 
 	VkInstance m_Instance;
 	VkPhysicalDevice m_PhysicalDevice;
@@ -47,4 +64,6 @@ private:
 	VkQueue m_PresentQ;
 	QFamilyIndex index;
 	SwapChainDetails swapChainDetails;
+
+	std::unique_ptr<Shader> m_Shader;
 };

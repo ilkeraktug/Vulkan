@@ -66,7 +66,7 @@ include "Vulkan/vendor/GLFW"
 		systemversion "latest"
 
 	filter { "configurations:Debug" }
-		defines "ENABLE_ASSERT"
+		defines { "ENABLE_ASSERT", "ENABLE_VALIDATION_LAYERS" }
 		runtime "Debug"
 		symbols "on"
 

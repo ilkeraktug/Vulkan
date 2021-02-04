@@ -11,10 +11,12 @@ Vulkan::Vulkan()
 
 Vulkan::~Vulkan()
 {
+	Shutdown();
 }
 
 void Vulkan::Init()
 {
+
 	VkApplicationInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	info.pApplicationName = "Vulkan App";
@@ -28,16 +30,50 @@ void Vulkan::Init()
 	createInfo.pApplicationInfo = &info;
 
 	uint32_t glfwExtensionCount = 0;
-	const char** glfwExtensions;
+	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+	std::vector<const char*> glfwExtensionsVector(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-	createInfo.enabledExtensionCount = glfwExtensionCount;
-	createInfo.ppEnabledExtensionNames = glfwExtensions;
+	#if ENABLE_VALIDATION_LAYERS
+	glfwExtensionsVector.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	#endif // ENABLE_VALIDATION_LAYERS
+
+	createInfo.enabledExtensionCount = glfwExtensionsVector.size();
+	createInfo.ppEnabledExtensionNames = glfwExtensionsVector.data();
+
+	createInfo.ppEnabledLayerNames = m_ValidationLayers.data();
+	createInfo.enabledLayerCount = m_ValidationLayers.size();
+	
+#if ENABLE_VALIDATION_LAYERS
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+	debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	debugCreateInfo.messageSeverity =
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	debugCreateInfo.messageType = 
+		VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
+		VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | 
+		VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	debugCreateInfo.pfnUserCallback = debugCallback;
+
+	createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)(&debugCreateInfo);
+#else
 	createInfo.enabledLayerCount = 0;
+	createInfo.pNext = nullptr;
+#endif // ENABLE_VALIDATION_LAYERS
+	
+
 
 	VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
 	VK_ASSERT((result == VK_SUCCESS), "Can't create instance!");
+
+#if ENABLE_VALIDATION_LAYERS
+	auto debugCreateFunc = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_Instance, "vkCreateDebugUtilsMessengerEXT");
+	VK_ASSERT(debugCreateFunc(m_Instance, &debugCreateInfo, nullptr, &m_DebugMessenger) == VK_SUCCESS, 
+		"Failed to create Debug Messenger!");
+
+#endif // ENABLE_VALIDATION_LAYERS
 
 	uint32_t extensionCount;
 	result = vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -81,10 +117,12 @@ void Vulkan::Init()
 	m_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 	VK_ASSERT(hasRequiredExtensions(), "Does not have required extensions!");
 
-	createInfo.enabledExtensionCount = m_DeviceExtensions.size();
-	createInfo.ppEnabledExtensionNames = m_DeviceExtensions.data();
+	deviceCreateInfo.enabledExtensionCount = m_DeviceExtensions.size();
+	deviceCreateInfo.ppEnabledExtensionNames = m_DeviceExtensions.data();
+	m_Shader = std::make_unique<Shader>("res/shaders");
 
 	SelectSwapChainObject();
+	createSwapChainImageView();
 
 }
 	
@@ -92,7 +130,16 @@ void Vulkan::Shutdown()
 {
 	vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
 	vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
+	for (auto& imgView : m_SwapchainImageView)
+		vkDestroyImageView(m_Device, imgView, nullptr);
+
 	vkDestroyDevice(m_Device, nullptr);
+
+#if ENABLE_VALIDATION_LAYERS
+	auto destroyDebugMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_Instance, "vkDestroyDebugUtilsMessengerEXT");
+	destroyDebugMessenger(m_Instance, m_DebugMessenger, nullptr);
+#endif // ENABLE_VALIDATION_LAYERS
+
 	vkDestroyInstance(m_Instance, nullptr);
 }
 
@@ -229,7 +276,7 @@ void Vulkan::SelectSwapChainObject()
 		extent.height = std::clamp(extent.height, swapChainDetails.Capabilities.minImageExtent.height, swapChainDetails.Capabilities.maxImageExtent.height);
 	}
 	
-	swapChainObject = std::make_tuple(extent, format, presentMode);
+	m_SwapChainObject = std::make_tuple(extent, format, presentMode);
 
 	uint32_t imageCount = swapChainDetails.Capabilities.minImageCount + 1;
 	if (swapChainDetails.Capabilities.maxImageCount > 0 && imageCount > swapChainDetails.Capabilities.maxImageCount)
@@ -249,7 +296,8 @@ void Vulkan::SelectSwapChainObject()
 	{
 		swapChainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 		swapChainCreateInfo.queueFamilyIndexCount = 2;
-		swapChainCreateInfo.pQueueFamilyIndices = { index.Graphics.value(), index.Present.value() };
+		uint32_t familyIndices[] = { index.Graphics.value(), index.Present.value() };
+		swapChainCreateInfo.pQueueFamilyIndices = familyIndices;
 	}
 	else
 	{
@@ -263,9 +311,56 @@ void Vulkan::SelectSwapChainObject()
 	swapChainCreateInfo.presentMode = presentMode;
 	swapChainCreateInfo.clipped = VK_TRUE;
 	swapChainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
-
 	VK_ASSERT(
-		vkCreateSwapchainKHR(m_Device, &swapChainCreateInfo, nullptr, &m_SwapChain), 
+		vkCreateSwapchainKHR(m_Device, &swapChainCreateInfo, nullptr, &m_SwapChain) == VK_SUCCESS, 
 		"Failed to create swap chain!");
 
+	vkGetSwapchainImagesKHR(m_Device, m_SwapChain, &imageCount, nullptr);
+	m_SwapchainImages.resize(imageCount);
+	vkGetSwapchainImagesKHR(m_Device, m_SwapChain, &imageCount, m_SwapchainImages.data());
+}
+
+void Vulkan::createSwapChainImageView()
+{
+	auto [extent, format, present] = m_SwapChainObject;
+	m_SwapchainImageView.resize(m_SwapchainImages.size());
+
+	for (int i = 0; i < m_SwapchainImages.size(); i++)
+	{
+		VkImageViewCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.image = m_SwapchainImages[i];
+		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		createInfo.format = format.format;
+		
+		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.baseMipLevel = 0;
+		createInfo.subresourceRange.levelCount = 1;
+		createInfo.subresourceRange.baseArrayLayer = 0;
+		createInfo.subresourceRange.layerCount = 0;
+
+		VK_ASSERT(
+			vkCreateImageView(m_Device, &createInfo, nullptr, &m_SwapchainImageView[i]),
+			"Failed to create Image View!");
+
+
+	}
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL Vulkan::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+{
+	if(messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+		VK_CORE_TRACE("Validation Layer[TRACE]: {0}", pCallbackData->pMessage);
+	else if(messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+		VK_CORE_WARN("Validation Layer[ERROR]: {0}", pCallbackData->pMessage);
+	else
+		VK_CORE_FATAL("Validation Layer[FATAL]: {0}", pCallbackData->pMessage);
+
+
+	return false;
 }
