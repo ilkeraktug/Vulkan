@@ -14,6 +14,7 @@ IncludeDir["spdlog"] = "Vulkan/vendor/spdlog/include"
 --vulkan include default location
 IncludeDir["vulkan"] = "C:/VulkanSDK/1.2.154.1/Include"
 
+
 include "Vulkan/vendor/GLFW"
 
 	project "Vulkan"
@@ -53,7 +54,7 @@ include "Vulkan/vendor/GLFW"
 	libdirs
 	{
 	--vulkan lib default location
-		"C:/VulkanSDK/1.2.154.1/Lib"
+		"C:/VulkanSDK/1.2.154.1/Lib",
 	}
 
 	links

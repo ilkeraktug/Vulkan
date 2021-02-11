@@ -108,18 +108,19 @@ void Vulkan::Init()
 	deviceCreateInfo.queueCreateInfoCount = 1;
 	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 	deviceCreateInfo.enabledLayerCount = 0;
-	
-	result = vkCreateDevice(m_PhysicalDevice, &deviceCreateInfo, nullptr, &m_Device);
-	VK_ASSERT((result == VK_SUCCESS), "Failed to create Device!");
-	vkGetDeviceQueue(m_Device, index.Graphics.value(), 0, &m_GraphicsQ);
-	vkGetDeviceQueue(m_Device, index.Present.value(), 0, &m_PresentQ);
 
 	m_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 	VK_ASSERT(hasRequiredExtensions(), "Does not have required extensions!");
 
 	deviceCreateInfo.enabledExtensionCount = m_DeviceExtensions.size();
 	deviceCreateInfo.ppEnabledExtensionNames = m_DeviceExtensions.data();
-	m_Shader = std::make_unique<Shader>("res/shaders");
+
+	result = vkCreateDevice(m_PhysicalDevice, &deviceCreateInfo, nullptr, &m_Device);
+	VK_ASSERT((result == VK_SUCCESS), "Failed to create Device!");
+	vkGetDeviceQueue(m_Device, index.Graphics.value(), 0, &m_GraphicsQ);
+	vkGetDeviceQueue(m_Device, index.Present.value(), 0, &m_PresentQ);
+
+
 
 	SelectSwapChainObject();
 	createSwapChainImageView();
@@ -243,13 +244,13 @@ void Vulkan::SelectSwapChainObject()
 	VkPresentModeKHR presentMode;
 	for (auto& f : swapChainDetails.Formats)
 	{
-		if (f.format == VK_FORMAT_R8G8B8A8_SRGB && f.format == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		if (f.format == VK_FORMAT_B8G8R8A8_SRGB && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 		{
 			format = f;
 			break;
 		}
-		
-		format = swapChainDetails.Formats[0];
+		else
+			format = swapChainDetails.Formats[0];
 	}
 
 	for (auto& p : swapChainDetails.Present)
@@ -259,8 +260,8 @@ void Vulkan::SelectSwapChainObject()
 			presentMode = p;
 			break;
 		}
-
-		presentMode = VK_PRESENT_MODE_FIFO_KHR;
+		else
+			presentMode = VK_PRESENT_MODE_FIFO_KHR;
 	}
 
 	if (swapChainDetails.Capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
@@ -342,10 +343,10 @@ void Vulkan::createSwapChainImageView()
 		createInfo.subresourceRange.baseMipLevel = 0;
 		createInfo.subresourceRange.levelCount = 1;
 		createInfo.subresourceRange.baseArrayLayer = 0;
-		createInfo.subresourceRange.layerCount = 0;
+		createInfo.subresourceRange.layerCount = 1;
 
 		VK_ASSERT(
-			vkCreateImageView(m_Device, &createInfo, nullptr, &m_SwapchainImageView[i]),
+			vkCreateImageView(m_Device, &createInfo, nullptr, &m_SwapchainImageView[i]) == VK_SUCCESS,
 			"Failed to create Image View!");
 
 
