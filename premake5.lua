@@ -5,6 +5,7 @@ workspace "Vulkan"
 	architecture "x64"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.architecture}-%{cfg.platform}"
+VulkanSDK = os.getenv("VULKAN_SDK")
 
 IncludeDir = {}
 IncludeDir["GLFW"] = "Vulkan/vendor/GLFW/include"
@@ -12,7 +13,8 @@ IncludeDir["glm"] = "Vulkan/vendor/glm"
 IncludeDir["spdlog"] = "Vulkan/vendor/spdlog/include"
 
 --vulkan include default location
-IncludeDir["vulkan"] = "C:/VulkanSDK/1.2.154.1/Include"
+--IncludeDir["vulkan"] = "C:/VulkanSDK/1.2.154.1/Include"
+IncludeDir["vulkan"] = VulkanSDK .. "/Include"
 
 
 include "Vulkan/vendor/GLFW"
@@ -54,7 +56,8 @@ include "Vulkan/vendor/GLFW"
 	libdirs
 	{
 	--vulkan lib default location
-		"C:/VulkanSDK/1.2.154.1/Lib",
+		--"C:/VulkanSDK/1.2.154.1/Lib",
+		 VulkanSDK .. "/Lib"
 	}
 
 	links

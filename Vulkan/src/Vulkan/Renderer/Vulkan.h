@@ -21,7 +21,7 @@ private:
 
 	void SelectSwapChainObject();
 	void createSwapChainImageView();
-
+	void createShaderModules();
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
@@ -59,6 +59,8 @@ private:
 	VkDevice m_Device;
 	VkSurfaceKHR m_Surface;
 	VkSwapchainKHR m_SwapChain;
+
+	VkPipelineLayout m_PipelineLayout;
 
 	VkQueue m_GraphicsQ;
 	VkQueue m_PresentQ;

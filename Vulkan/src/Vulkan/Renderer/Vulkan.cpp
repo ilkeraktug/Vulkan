@@ -4,6 +4,8 @@
 #include "Vulkan\Core.h"
 #include "Vulkan\Window.h"
 
+#include "Shader.h"
+
 Vulkan::Vulkan()
 {
 	Init();
@@ -120,8 +122,6 @@ void Vulkan::Init()
 	vkGetDeviceQueue(m_Device, index.Graphics.value(), 0, &m_GraphicsQ);
 	vkGetDeviceQueue(m_Device, index.Present.value(), 0, &m_PresentQ);
 
-
-
 	SelectSwapChainObject();
 	createSwapChainImageView();
 
@@ -133,6 +133,7 @@ void Vulkan::Shutdown()
 	vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
 	for (auto& imgView : m_SwapchainImageView)
 		vkDestroyImageView(m_Device, imgView, nullptr);
+	vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
 
 	vkDestroyDevice(m_Device, nullptr);
 
@@ -319,6 +320,7 @@ void Vulkan::SelectSwapChainObject()
 	vkGetSwapchainImagesKHR(m_Device, m_SwapChain, &imageCount, nullptr);
 	m_SwapchainImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(m_Device, m_SwapChain, &imageCount, m_SwapchainImages.data());
+
 }
 
 void Vulkan::createSwapChainImageView()
@@ -353,13 +355,97 @@ void Vulkan::createSwapChainImageView()
 	}
 }
 
+void Vulkan::createShaderModules()
+{
+	//TODO :: 
+	VkShaderModule vertexShader = Shader::setupShaderModule("res/shaders/vert.spv", m_Device);
+	VkShaderModule fragmentShader = Shader::setupShaderModule("res/shaders/frag.spv", m_Device);
+
+	VkPipelineShaderStageCreateInfo vertexShaderInfo{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+	vertexShaderInfo.pNext = nullptr;
+	vertexShaderInfo.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
+	vertexShaderInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertexShaderInfo.module = vertexShader;
+	vertexShaderInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo fragmentShaderInfo{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+	vertexShaderInfo.pNext = nullptr;
+	vertexShaderInfo.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
+	vertexShaderInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	vertexShaderInfo.module = fragmentShader;
+	vertexShaderInfo.pName = "main";
+
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
+	vertexInputInfo.vertexBindingDescriptionCount = 0;
+	vertexInputInfo.pVertexBindingDescriptions = nullptr;
+	vertexInputInfo.vertexAttributeDescriptionCount = 0;
+	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+
+	VkPipelineInputAssemblyStateCreateInfo inputInfo{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
+	inputInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	inputInfo.primitiveRestartEnable = VK_FALSE;
+
+	VkViewport viewport{};
+	viewport.x = 0;
+	viewport.y = 0;
+	viewport.width = swapChainDetails.Capabilities.currentExtent.width;
+	viewport.height = swapChainDetails.Capabilities.currentExtent.height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = swapChainDetails.Capabilities.currentExtent;
+
+	VkPipelineViewportStateCreateInfo viewportCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
+	viewportCreateInfo.viewportCount = 1;
+	viewportCreateInfo.pViewports = &viewport;
+	viewportCreateInfo.scissorCount = 1;
+	viewportCreateInfo.pScissors = &scissor;
+
+	VkPipelineRasterizationStateCreateInfo rasterizeCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
+	rasterizeCreateInfo.depthClampEnable = VK_FALSE;
+	rasterizeCreateInfo.rasterizerDiscardEnable = VK_FALSE;
+	rasterizeCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
+	rasterizeCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizeCreateInfo.frontFace = VkFrontFace::VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	rasterizeCreateInfo.depthBiasEnable = VK_FALSE;
+	rasterizeCreateInfo.lineWidth = 1.0f;
+
+	VkPipelineMultisampleStateCreateInfo multisampling{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
+	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisampling.sampleShadingEnable = VK_FALSE;
+
+	VkPipelineColorBlendAttachmentState blendAttachment{};
+	blendAttachment.colorWriteMask =
+		VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	blendAttachment.blendEnable = VK_FALSE;
+
+	VkPipelineColorBlendStateCreateInfo blendCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
+	blendCreateInfo.logicOpEnable = VK_FALSE;
+	blendCreateInfo.attachmentCount = 1;
+	blendCreateInfo.pAttachments = &blendAttachment;
+
+	VkDynamicState dynamicStates[] = {
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_LINE_WIDTH
+	};
+
+	VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
+	dynamicStateCreateInfo.dynamicStateCount = sizeof(dynamicStates) / sizeof(VkDynamicState);
+	dynamicStateCreateInfo.pDynamicStates = dynamicStates;
+
+	VkPipelineLayoutCreateInfo pipelineCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+
+	VK_ASSERT(vkCreatePipelineLayout(m_Device, &pipelineCreateInfo, nullptr, &m_PipelineLayout) == VK_SUCCESS,
+		"Failed to create VkPipeline");
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL Vulkan::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
-	if(messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
-		VK_CORE_TRACE("Validation Layer[TRACE]: {0}", pCallbackData->pMessage);
-	else if(messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+	if(messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		VK_CORE_WARN("Validation Layer[ERROR]: {0}", pCallbackData->pMessage);
-	else
+	else if(messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		VK_CORE_FATAL("Validation Layer[FATAL]: {0}", pCallbackData->pMessage);
 
 
