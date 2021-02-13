@@ -4,18 +4,18 @@
 #include "Vulkan\Core.h"
 
 
-VkShaderModule Shader::setupShaderModule(const std::string& filepath, VkDevice device)
+VkShaderModule Shader::setupShaderModule(VkDevice& m_Device)
 {
 	VkShaderModule shaderModule;
 
-	std::string source = readFile(filepath);
+	std::string source = readFile(m_FileName);
 
 	VkShaderModuleCreateInfo createInfo{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
 	createInfo.codeSize = source.size();
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(source.c_str());
 
-	if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-		VK_CORE_WARN("Cant create shader module at {0}", filepath);
+	if (vkCreateShaderModule(m_Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+		VK_CORE_WARN("Cant create shader module at {0}", m_FileName);
 
 	return shaderModule;
 }

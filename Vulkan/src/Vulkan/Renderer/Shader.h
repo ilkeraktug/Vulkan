@@ -4,7 +4,12 @@
 class Shader
 {
 public:
-	static VkShaderModule setupShaderModule(const std::string& filepath, VkDevice device);
+	Shader(const std::string& filepath)
+		:m_FileName(filepath) {}
+	VkShaderModule setupShaderModule(VkDevice& m_Device);
 private:
-	static std::string readFile(const std::string& fileName);
+	std::string readFile(const std::string& fileName);
+
+	std::string m_FileName;
+	VkDevice m_Device;
 };
