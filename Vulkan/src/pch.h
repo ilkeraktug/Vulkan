@@ -15,3 +15,6 @@
 #include <unordered_set>
 #include <optional>
 #include <set>
+
+#include <Windows.h>
+#include <shellapi.h>
