@@ -11,15 +11,27 @@ public:
 
 	void Init();
 
-	VkInstance& GetInstance() { return m_Instance; }
+	inline VkInstance& GetInstance() { return m_Instance; }
+	inline VkPhysicalDevice& GetGPU() { return m_PhysicalDevice; }
+	inline VkPhysicalDevice& GetPhysicalDevice() { return m_PhysicalDevice; }
+private:
+	struct QueueIndices
+	{
+		std::optional<uint32_t> GraphicsIndex;
 
+		inline bool isCompleted() { return GraphicsIndex.has_value(); }
+	};
 private:
 	void createInstance();
+	void selectGPU();
+	void createDevice();
 private:
 	VkInstance m_Instance;
+	VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
+	VkDevice m_Device;
 
-
-	#ifdef ENABLE_VALIDATION_LAYERS
+	QueueIndices indices;
+#ifdef ENABLE_VALIDATION_LAYERS
 private:
 	void checkValidationSupport();
 	VkDebugUtilsMessengerCreateInfoEXT createDebugMessenger();
@@ -33,5 +45,5 @@ private:
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanCore::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
-	#endif // ENABLE_VALIDATION_LAYERS
+#endif // ENABLE_VALIDATION_LAYERS
 };

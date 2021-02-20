@@ -7,6 +7,8 @@
 VulkanCore::VulkanCore()
 {
 	createInstance();
+	selectGPU();
+	createDevice();
 }
 
 VulkanCore::~VulkanCore()
@@ -16,6 +18,7 @@ VulkanCore::~VulkanCore()
 	destroyDebugUtils();
 #endif // ENABLE_VALIDATION_LAYERS
 
+	vkDestroyDevice(m_Device, nullptr);
 	vkDestroyInstance(m_Instance, nullptr);
 }
 
@@ -43,7 +46,7 @@ void VulkanCore::createInstance()
 
 	VkInstanceCreateInfo instanceCreateInfo{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
 	instanceCreateInfo.pApplicationInfo = &appInfo;
-	instanceCreateInfo.enabledExtensionCount = glfwExtensionsVector.size();
+	instanceCreateInfo.enabledExtensionCount = (uint32_t)glfwExtensionsVector.size();
 	instanceCreateInfo.ppEnabledExtensionNames = glfwExtensionsVector.data();
 	instanceCreateInfo.enabledLayerCount = 0;
 	instanceCreateInfo.ppEnabledLayerNames = nullptr;
@@ -53,19 +56,91 @@ void VulkanCore::createInstance()
 	checkValidationSupport();
 	if (m_ValidationSupport)
 	{
-		instanceCreateInfo.enabledLayerCount	= m_ValidationLayers.size();
+		instanceCreateInfo.enabledLayerCount	= (uint32_t)m_ValidationLayers.size();
 		instanceCreateInfo.ppEnabledLayerNames	= m_ValidationLayers.data();
 		instanceCreateInfo.pNext				= &createDebugMessenger();
 	}
 	else
 		VK_CORE_WARN("Validation layers is not supported");
 #endif // ENABLE_VALIDATION_LAYERS
+	
 	VK_ASSERT(vkCreateInstance(&instanceCreateInfo, nullptr, &m_Instance) == VK_SUCCESS, "Failed to create vkInstance");
 
 #ifdef ENABLE_VALIDATION_LAYERS
 	auto debugCreateFunc = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_Instance, "vkCreateDebugUtilsMessengerEXT");
 	debugCreateFunc(m_Instance, &createDebugMessenger(), nullptr, &m_DebugMessenger);
 #endif // ENABLE_VALIDATION_LAYERS
+}
+
+void VulkanCore::selectGPU()
+{
+	VkPhysicalDeviceProperties gpuProperties;
+
+	uint32_t gpuCount;
+	vkEnumeratePhysicalDevices(m_Instance, &gpuCount, nullptr);
+	std::vector<VkPhysicalDevice> physicalDevices(gpuCount);
+	vkEnumeratePhysicalDevices(m_Instance, &gpuCount, physicalDevices.data());
+	
+	VK_ASSERT(gpuCount, "Couldnt find any GPU supports Vulkan API!");
+
+
+	//TODO:: Build more advanced GPU selection system.
+	for (size_t i = 0; i < physicalDevices.size(); i++)
+	{
+		vkGetPhysicalDeviceProperties(physicalDevices.at(i), &gpuProperties);
+		if (gpuProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+		{
+			m_PhysicalDevice = physicalDevices.at(i);
+			VK_INFO("Device Name : {0}", gpuProperties.deviceName);
+			break;
+		}
+	}
+
+	VK_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE, "No GPU found!");
+
+	uint32_t queueFamilyCount;
+	vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyCount, nullptr);
+	std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyCount, queueFamilyProperties.data());
+
+	for (size_t i = 0; i < queueFamilyProperties.size(); i++)
+	{
+		if (queueFamilyProperties.at(i).queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			indices.GraphicsIndex = i;
+			break;
+		}
+	}
+	
+}
+
+void VulkanCore::createDevice()
+{
+	VkDeviceQueueCreateInfo deviceQueueCreateInfo{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
+	deviceQueueCreateInfo.queueFamilyIndex = indices.GraphicsIndex.value();
+	deviceQueueCreateInfo.queueCount = 1;
+	float priorty = 1.0f;
+	deviceQueueCreateInfo.pQueuePriorities = &priorty;
+
+	VkPhysicalDeviceFeatures physicalDeviceFeatures{};
+
+	VkDeviceCreateInfo deviceCreateInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+	deviceCreateInfo.pEnabledFeatures = &physicalDeviceFeatures;
+	deviceCreateInfo.queueCreateInfoCount = 1;
+	deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
+
+	deviceCreateInfo.enabledExtensionCount = 0;
+	deviceCreateInfo.ppEnabledExtensionNames = nullptr;
+
+	deviceCreateInfo.enabledLayerCount = 0;
+	deviceCreateInfo.ppEnabledLayerNames = nullptr;
+#ifdef ENABLE_VALIDATION_LAYERS
+	deviceCreateInfo.enabledLayerCount = (uint32_t)m_ValidationLayers.size();
+	deviceCreateInfo.ppEnabledLayerNames = m_ValidationLayers.data();
+#endif // ENABLE_VALIDATION_LAYERS
+
+	VK_ASSERT(vkCreateDevice(m_PhysicalDevice, &deviceCreateInfo, nullptr, &m_Device) == VK_SUCCESS, 
+		"Failed to create vkDevice!");
 }
 
 #ifdef ENABLE_VALIDATION_LAYERS
