@@ -1,14 +1,20 @@
 #include "pch.h"
 #include "VulkanCore.h"
 
+#include "Vulkan\Window.h"
+
 #include <GLFW\glfw3.h>
 
+VkInstance VulkanCore::m_Instance;
+VkPhysicalDevice VulkanCore::m_PhysicalDevice = VK_NULL_HANDLE;
+VkDevice VulkanCore::m_Device;
+VkSurfaceKHR VulkanCore::m_Surface;
+bool VulkanCore::m_SwapChainSupport = false;
+QueueIndices VulkanCore::m_QueueIndices;
 
 VulkanCore::VulkanCore()
 {
-	createInstance();
-	selectGPU();
-	createDevice();
+	Init();
 }
 
 VulkanCore::~VulkanCore()
@@ -24,6 +30,11 @@ VulkanCore::~VulkanCore()
 
 void VulkanCore::Init()
 {
+	createInstance();
+	createSurface();
+	selectGPU();
+	createDevice();
+	checkSwapChainSupport();
 }
 
 
@@ -107,30 +118,45 @@ void VulkanCore::selectGPU()
 	{
 		if (queueFamilyProperties.at(i).queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
-			indices.GraphicsIndex = i;
-			break;
+			m_QueueIndices.GraphicsIndex = i;
 		}
+
+		VkBool32 presentSupport = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, m_Surface, &presentSupport);
+		if (presentSupport)
+			m_QueueIndices.PresentIndex = i;
+
+		if (m_QueueIndices.isCompleted())
+			break;
+
 	}
 	
 }
 
 void VulkanCore::createDevice()
 {
-	VkDeviceQueueCreateInfo deviceQueueCreateInfo{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
-	deviceQueueCreateInfo.queueFamilyIndex = indices.GraphicsIndex.value();
-	deviceQueueCreateInfo.queueCount = 1;
+	std::vector<uint32_t> queueIndices = { m_QueueIndices.GraphicsIndex.value(), m_QueueIndices.PresentIndex.value() };
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+
 	float priorty = 1.0f;
-	deviceQueueCreateInfo.pQueuePriorities = &priorty;
+	for (const auto& i : queueIndices)
+	{
+		VkDeviceQueueCreateInfo deviceQueueCreateInfo{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
+		deviceQueueCreateInfo.queueFamilyIndex = i;
+		deviceQueueCreateInfo.queueCount = 1;
+		deviceQueueCreateInfo.pQueuePriorities = &priorty;
+		queueCreateInfos.push_back(deviceQueueCreateInfo);
+	}
 
 	VkPhysicalDeviceFeatures physicalDeviceFeatures{};
 
 	VkDeviceCreateInfo deviceCreateInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 	deviceCreateInfo.pEnabledFeatures = &physicalDeviceFeatures;
 	deviceCreateInfo.queueCreateInfoCount = 1;
-	deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
+	deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
 
-	deviceCreateInfo.enabledExtensionCount = 0;
-	deviceCreateInfo.ppEnabledExtensionNames = nullptr;
+	deviceCreateInfo.enabledExtensionCount = m_DeviceExtension.size();
+	deviceCreateInfo.ppEnabledExtensionNames = m_DeviceExtension.data();
 
 	deviceCreateInfo.enabledLayerCount = 0;
 	deviceCreateInfo.ppEnabledLayerNames = nullptr;
@@ -141,7 +167,39 @@ void VulkanCore::createDevice()
 
 	VK_ASSERT(vkCreateDevice(m_PhysicalDevice, &deviceCreateInfo, nullptr, &m_Device) == VK_SUCCESS, 
 		"Failed to create vkDevice!");
+
+	vkGetDeviceQueue(m_Device, m_QueueIndices.GraphicsIndex.value(), 0, &m_GraphicsQueue);
+	vkGetDeviceQueue(m_Device, m_QueueIndices.PresentIndex.value(), 0, &m_PresentQueue);
 }
+
+void VulkanCore::createSurface()
+{
+	//TODO: Use own functions to create surface.
+	VK_ASSERT(glfwCreateWindowSurface(m_Instance, static_cast<GLFWwindow*>(Window::GetWindow()), nullptr, &m_Surface) == VK_SUCCESS, "Failed to create window surface!");
+}
+
+void VulkanCore::checkSwapChainSupport()
+{
+	uint32_t propertyCount = 0;
+	vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &propertyCount, nullptr);
+	std::vector<VkExtensionProperties> deviceExtensions(propertyCount);
+	vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &propertyCount, deviceExtensions.data());
+
+	int count = 0;
+	for (size_t i = 0; i < deviceExtensions.size(); i++)
+	{
+		for (size_t j = 0; j < m_DeviceExtension.size(); j++)
+		{
+			int debug = strcmp(deviceExtensions.at(i).extensionName, m_DeviceExtension.at(j));
+			if (!debug) //strcmp returns 0 if both strings are equal!
+				count++;
+		}
+	}
+
+	if (count == m_DeviceExtension.size())
+		m_SwapChainSupport = true;
+}
+
 
 #ifdef ENABLE_VALIDATION_LAYERS
 

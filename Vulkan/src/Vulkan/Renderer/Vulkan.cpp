@@ -5,7 +5,6 @@
 #include "Vulkan\Window.h"
 
 #include "Shader.h"
-#include "VulkanCore.h"
 
 Vulkan::Vulkan()
 {
@@ -19,12 +18,12 @@ Vulkan::~Vulkan()
 
 void Vulkan::Init()
 {
-	VulkanCore core;
+	m_VulkanCore.reset(new VulkanCore);
+	m_Swapchain.reset(new SwapChain);
 }
 	
 void Vulkan::Shutdown()
 {
-
 }
 
 void Vulkan::Run()

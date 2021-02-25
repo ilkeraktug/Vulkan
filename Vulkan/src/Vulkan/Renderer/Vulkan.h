@@ -5,6 +5,8 @@
 #include <GLFW\glfw3native.h>
 
 #include "Shader.h"
+#include "Vulkan\Renderer\VulkanCore.h"
+#include "SwapChain.h"
 
 class Vulkan
 {
@@ -16,7 +18,6 @@ public:
 	void Shutdown();
 	void Run();
 private:
-	void createInstance();
-private:
-	VkInstance m_Instance;
+	std::unique_ptr<VulkanCore> m_VulkanCore;
+	std::unique_ptr<SwapChain> m_Swapchain;
 };

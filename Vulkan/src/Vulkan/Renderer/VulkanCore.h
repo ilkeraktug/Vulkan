@@ -3,6 +3,15 @@
 #include <vulkan\vulkan.h>
 #include "Vulkan\Core.h"
 
+
+struct QueueIndices
+{
+	std::optional<uint32_t> GraphicsIndex;
+	std::optional<uint32_t> PresentIndex;
+
+	inline bool isCompleted() { return GraphicsIndex.has_value() && PresentIndex.has_value(); }
+};
+
 class VulkanCore
 {
 public:
@@ -10,27 +19,34 @@ public:
 	~VulkanCore();
 
 	void Init();
-
-	inline VkInstance& GetInstance() { return m_Instance; }
-	inline VkPhysicalDevice& GetGPU() { return m_PhysicalDevice; }
-	inline VkPhysicalDevice& GetPhysicalDevice() { return m_PhysicalDevice; }
-private:
-	struct QueueIndices
-	{
-		std::optional<uint32_t> GraphicsIndex;
-
-		inline bool isCompleted() { return GraphicsIndex.has_value(); }
-	};
+	inline static VkInstance& GetInstance() { return m_Instance; }
+	inline static VkPhysicalDevice& GetGPU() { return m_PhysicalDevice; }
+	inline static VkPhysicalDevice& GetPhysicalDevice() { return m_PhysicalDevice; }
+	inline static VkDevice& GetDevice() { return m_Device; }
+	inline static VkSurfaceKHR& GetSurface() { return m_Surface; }
+	
+	inline static bool GetSwapChainSupport() { return m_SwapChainSupport; }
+	
+	inline static QueueIndices& GetQueueIndices() { return m_QueueIndices; }
 private:
 	void createInstance();
 	void selectGPU();
 	void createDevice();
+	void createSurface();
+	void checkSwapChainSupport();
 private:
-	VkInstance m_Instance;
-	VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
-	VkDevice m_Device;
+	static VkInstance m_Instance;
+	static VkPhysicalDevice m_PhysicalDevice;
+	static VkDevice m_Device;
+	static VkSurfaceKHR m_Surface;
 
-	QueueIndices indices;
+	static bool m_SwapChainSupport;
+	static QueueIndices m_QueueIndices;
+	VkQueue m_GraphicsQueue;
+	VkQueue m_PresentQueue;
+
+	const std::vector<const char*> m_DeviceExtension = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
 #ifdef ENABLE_VALIDATION_LAYERS
 private:
 	void checkValidationSupport();
@@ -38,7 +54,7 @@ private:
 
 	void destroyDebugUtils();
 
-	std::vector<const char*> m_ValidationLayers = { "VK_LAYER_KHRONOS_validation" };
+	const std::vector<const char*> m_ValidationLayers = { "VK_LAYER_KHRONOS_validation" };
 	bool m_ValidationSupport = false;
 	VkDebugUtilsMessengerCreateInfoEXT m_DebugMessengerCreateInfo;
 	VkDebugUtilsMessengerEXT m_DebugMessenger;
