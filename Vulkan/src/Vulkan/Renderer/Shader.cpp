@@ -3,31 +3,52 @@
 
 #include "Vulkan\Core.h"
 
-
-VkShaderModule Shader::setupShaderModule(VkDevice& m_Device)
+Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
 {
-	VkShaderModule shaderModule;
-
-	std::string source = readFile(m_FileName);
-
-	VkShaderModuleCreateInfo createInfo{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
-	createInfo.codeSize = source.size();
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(source.c_str());
-
-	if (vkCreateShaderModule(m_Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-		VK_CORE_WARN("Cant create shader module at {0}", m_FileName);
-
-	return shaderModule;
+	setupShaderModule(readFile(vertexPath), readFile(fragmentPath));
 }
 
-std::string Shader::readFile(const std::string& fileName)
+Shader::~Shader()
 {
-	std::ifstream file(fileName, std::ios::in | std::ios::binary);
+	vkDestroyShaderModule(VulkanCore::GetDevice(), m_VertexModule, nullptr);
+	vkDestroyShaderModule(VulkanCore::GetDevice(), m_FragmentModule, nullptr);
+}
+
+void Shader::setupShaderModule(const std::string& vertexSrc, const std::string& fragmentSrc)
+{
+	VkShaderModuleCreateInfo vertexCreateInfo{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
+	vertexCreateInfo.codeSize = vertexSrc.size();
+	vertexCreateInfo.pCode = reinterpret_cast<const uint32_t*>(vertexSrc.c_str());
+
+	VkShaderModuleCreateInfo fragmentCreateInfo{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
+	fragmentCreateInfo.codeSize = fragmentSrc.size();
+	fragmentCreateInfo.pCode = reinterpret_cast<const uint32_t*>(fragmentSrc.c_str());
+
+	VK_ASSERT(vkCreateShaderModule(VulkanCore::GetDevice(), &vertexCreateInfo, nullptr, &m_VertexModule) == VK_SUCCESS, "Failed to create vertexShaderModule");
+	VK_ASSERT(vkCreateShaderModule(VulkanCore::GetDevice(), &fragmentCreateInfo, nullptr, &m_FragmentModule) == VK_SUCCESS, "Failed to create fragmentShaderModule");
+
+	VkPipelineShaderStageCreateInfo vertexShaderStageCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+	vertexShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertexShaderStageCreateInfo.module = m_VertexModule;
+	vertexShaderStageCreateInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo fragmentShaderStageCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+	fragmentShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragmentShaderStageCreateInfo.module = m_FragmentModule;
+	fragmentShaderStageCreateInfo.pName = "main";
+
+	m_StageCreateInfos[0] = vertexShaderStageCreateInfo;
+	m_StageCreateInfos[1] = fragmentShaderStageCreateInfo;
+}
+
+std::string Shader::readFile(const std::string& filepath)
+{
+	std::ifstream file(filepath, std::ios::in | std::ios::binary);
 	std::string buffer;
 
 	if (!file.is_open())
 	{
-		VK_CORE_ERROR("Cant open file {0}", fileName);
+		VK_CORE_ERROR("Cant open file {0}", filepath);
 	}
 	else
 	{
@@ -42,7 +63,7 @@ std::string Shader::readFile(const std::string& fileName)
 		}
 		else
 		{
-			VK_CORE_ERROR("Cant read file {0}", fileName);
+			VK_CORE_ERROR("Cant read file {0}", filepath);
 		}
 	}
 

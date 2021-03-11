@@ -24,7 +24,10 @@ public:
 	inline static VkPhysicalDevice& GetPhysicalDevice() { return m_PhysicalDevice; }
 	inline static VkDevice& GetDevice() { return m_Device; }
 	inline static VkSurfaceKHR& GetSurface() { return m_Surface; }
-	
+
+	inline static VkQueue& GetGraphicsQueue() { return m_GraphicsQueue; }
+	inline static VkQueue& GetPresentationQueue() { return m_PresentQueue; }
+
 	inline static bool GetSwapChainSupport() { return m_SwapChainSupport; }
 	
 	inline static QueueIndices& GetQueueIndices() { return m_QueueIndices; }
@@ -42,8 +45,8 @@ private:
 
 	static bool m_SwapChainSupport;
 	static QueueIndices m_QueueIndices;
-	VkQueue m_GraphicsQueue;
-	VkQueue m_PresentQueue;
+	static VkQueue m_GraphicsQueue;
+	static VkQueue m_PresentQueue;
 
 	const std::vector<const char*> m_DeviceExtension = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 

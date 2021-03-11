@@ -11,6 +11,9 @@ VkDevice VulkanCore::m_Device;
 VkSurfaceKHR VulkanCore::m_Surface;
 bool VulkanCore::m_SwapChainSupport = false;
 QueueIndices VulkanCore::m_QueueIndices;
+VkQueue VulkanCore::m_GraphicsQueue;
+VkQueue VulkanCore::m_PresentQueue;
+
 
 VulkanCore::VulkanCore()
 {

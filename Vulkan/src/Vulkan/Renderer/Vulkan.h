@@ -7,6 +7,8 @@
 #include "Shader.h"
 #include "Vulkan\Renderer\VulkanCore.h"
 #include "SwapChain.h"
+#include "Pipeline.h"
+#include "Renderer.h"
 
 class Vulkan
 {
@@ -20,4 +22,9 @@ public:
 private:
 	std::unique_ptr<VulkanCore> m_VulkanCore;
 	std::unique_ptr<SwapChain> m_Swapchain;
+	std::unique_ptr<Pipeline> m_Pipeline;
+	std::unique_ptr<Renderer> m_Renderer;
+
+	std::unique_ptr<Shader> m_Shader;
+
 };
