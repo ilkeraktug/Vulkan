@@ -5,6 +5,10 @@
 #include <GLFW\glfw3native.h>
 
 #include "Shader.h"
+#include "Vulkan\Renderer\VulkanCore.h"
+#include "SwapChain.h"
+#include "Pipeline.h"
+#include "Renderer.h"
 
 class Vulkan
 {
@@ -16,71 +20,11 @@ public:
 	void Shutdown();
 	void Run();
 private:
-	void findDevice();
-	bool hasRequiredExtensions();
+	std::unique_ptr<VulkanCore> m_VulkanCore;
+	std::unique_ptr<SwapChain> m_Swapchain;
+	std::unique_ptr<Pipeline> m_Pipeline;
+	std::unique_ptr<Renderer> m_Renderer;
 
-	void SelectSwapChainObject();
-	void createSwapChainImageView();
-	void createShaderModules();
-	void createRenderer();
-	void createFrameBuffer();
-	void createCommandPool();
-	void createCommandBuffer();
-	void createSemaphore();
+	std::unique_ptr<Shader> m_Shader;
 
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
-	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
-	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-private:
-	struct QFamilyIndex
-	{
-		std::optional<uint32_t> Graphics;
-		std::optional<uint32_t> Present;
-
-		inline bool hasValue() { return Graphics.has_value() && Present.has_value(); }
-	};
-
-	struct SwapChainDetails
-	{
-		VkSurfaceCapabilitiesKHR Capabilities;
-		std::vector<VkSurfaceFormatKHR> Formats;
-		std::vector<VkPresentModeKHR> Present;
-	};
-
-	std::vector<const char*> m_DeviceExtensions;
-
-	std::vector<VkImage> m_SwapchainImages;
-	std::vector<VkImageView> m_SwapchainImageView;
-
-	std::tuple<VkExtent2D, VkSurfaceFormatKHR, VkPresentModeKHR> m_SwapChainObject;
-
-	VkDebugUtilsMessengerEXT m_DebugMessenger;
-	const std::vector<const char*> m_ValidationLayers = {
-	"VK_LAYER_KHRONOS_validation"
-	};
-
-	VkInstance m_Instance;
-	VkPhysicalDevice m_PhysicalDevice;
-	VkDevice m_Device;
-	VkSurfaceKHR m_Surface;
-	VkSwapchainKHR m_SwapChain;
-	VkFormat m_Format;
-	VkCommandPool m_CommandPool;
-	std::vector<VkFramebuffer> m_SwapChainFrameBuffers;
-	std::vector<VkCommandBuffer> m_CommandBuffers;
-
-	VkRenderPass m_RenderPass;
-	VkPipeline m_GraphicsPipeline;
-	VkPipelineLayout m_PipelineLayout;
-
-	VkSemaphore m_ImageAvaible;
-	VkSemaphore m_RenderFinished;
-
-	VkQueue m_GraphicsQ;
-	VkQueue m_PresentQ;
-	QFamilyIndex index;
-	SwapChainDetails swapChainDetails;
-
-	std::unique_ptr<Shader> m_VertexShader;
-	std::unique_ptr<Shader> m_FragmentShader;
 };
