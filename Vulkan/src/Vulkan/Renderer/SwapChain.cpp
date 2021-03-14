@@ -4,6 +4,8 @@
 #include <GLFW\glfw3.h>
 #include "Vulkan\Window.h"
 
+//Static members init.
+
 VkSwapchainKHR SwapChain::m_Swapchain;
 VkRenderPass SwapChain::m_RenderPass;
 std::vector<VkImage> SwapChain::m_SwapchainImages;
