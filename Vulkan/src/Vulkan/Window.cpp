@@ -3,6 +3,8 @@
 
 #include "Vulkan\Core.h"
 
+#include "Renderer\Vulkan.h"
+
 GLFWwindow* Window::m_Window = nullptr;
 
 Window::Window(const WindowProps& windowProp)
@@ -41,6 +43,18 @@ void Window::Init(const WindowProps& windowProp)
 		windowProp.Name.c_str(),
 		windowProp.Width,
 		windowProp.Height);
+
+	glfwSetWindowUserPointer(m_Window, &m_WindowData);
+
+	glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
+	{
+		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		data.Width = width;
+		data.Height = height;
+
+		Vulkan::recreateSwapchain(width, height);
+
+	});
 }
 
 void Window::Shutdown()

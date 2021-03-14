@@ -1,6 +1,21 @@
 #include "pch.h"
 #include "Pipeline.h"
 
+Pipeline::Pipeline(SwapChain& swapchain, const Shader& shader)
+	:m_Swapchain(swapchain)
+{
+	createPipeline(shader);
+	createCommandPool();
+}
+
+Pipeline::~Pipeline()
+{
+	vkQueueWaitIdle(VulkanCore::GetGraphicsQueue());
+	vkDestroyCommandPool(VulkanCore::GetDevice(), m_CommandPool, nullptr);
+	vkDestroyPipeline(VulkanCore::GetDevice(), m_GraphicsPipeline, VK_NULL_HANDLE);
+	vkDestroyPipelineLayout(VulkanCore::GetDevice(), m_PipelineLayout, nullptr);
+}
+
 void Pipeline::createPipeline(const Shader& shader)
 {
 	VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
@@ -111,7 +126,7 @@ void Pipeline::createCommandPool()
 	for (size_t i = 0; i < m_CommandBuffers.size(); i++)
 	{
 		VkCommandBufferBeginInfo commandBuffer{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-		commandBuffer.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+		commandBuffer.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
 		vkBeginCommandBuffer(m_CommandBuffers.at(i), &commandBuffer);
 
@@ -124,6 +139,7 @@ void Pipeline::createCommandPool()
 		renderPassBegin.renderArea.extent = m_Swapchain.GetExtent();
 		renderPassBegin.renderArea.offset = { 0, 0 };
 		renderPassBegin.framebuffer = m_Swapchain.GetFramebuffers().at(i);
+
 
 		vkCmdBeginRenderPass(m_CommandBuffers.at(i), &renderPassBegin, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline(m_CommandBuffers.at(i), VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
