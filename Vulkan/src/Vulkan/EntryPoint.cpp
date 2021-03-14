@@ -8,5 +8,5 @@ int main()
 
 	app->Run();
 
-	delete app;
+	//delete app;
 }

@@ -5,12 +5,8 @@
 class Pipeline
 {
 public:
-	Pipeline(SwapChain& swapchain, const Shader& shader)
-		: m_Swapchain(swapchain)
-	{
-		createPipeline(shader);
-		createCommandPool();
-	}
+	Pipeline(SwapChain& swapchain, const Shader& shader);
+	~Pipeline();
 
 	SwapChain& GetSwapchain() { return m_Swapchain; }
 	const std::vector< VkCommandBuffer>& GetCommandBuffers() { return m_CommandBuffers; }

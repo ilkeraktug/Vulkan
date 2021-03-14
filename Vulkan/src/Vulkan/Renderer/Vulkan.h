@@ -19,12 +19,15 @@ public:
 	void Init();
 	void Shutdown();
 	void Run();
+
+	static void recreateSwapchain(uint32_t width, uint32_t height);
 private:
 	std::unique_ptr<VulkanCore> m_VulkanCore;
-	std::unique_ptr<SwapChain> m_Swapchain;
-	std::unique_ptr<Pipeline> m_Pipeline;
-	std::unique_ptr<Renderer> m_Renderer;
 
-	std::unique_ptr<Shader> m_Shader;
+	static std::unique_ptr<SwapChain> m_Swapchain;
+	static std::unique_ptr<Pipeline> m_Pipeline;
+	static std::unique_ptr<Renderer> m_Renderer;
+
+	static std::unique_ptr<Shader> m_Shader;
 
 };

@@ -17,6 +17,7 @@ Application::Application()
     m_Window.reset(new Window());
 
     m_Vulkan.reset(new Vulkan());
+
 }
 
 Application::~Application()
@@ -26,7 +27,7 @@ Application::~Application()
 
 void Application::Run()
 {
-    while (m_Running) 
+    while (!glfwWindowShouldClose(static_cast<GLFWwindow*>(m_Window->GetWindow())))
     {
         m_Window->OnUpdate();
         m_Vulkan->Run();

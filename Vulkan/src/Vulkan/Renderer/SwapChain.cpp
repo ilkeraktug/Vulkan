@@ -4,6 +4,17 @@
 #include <GLFW\glfw3.h>
 #include "Vulkan\Window.h"
 
+VkSwapchainKHR SwapChain::m_Swapchain;
+VkRenderPass SwapChain::m_RenderPass;
+std::vector<VkImage> SwapChain::m_SwapchainImages;
+std::vector<VkImageView> SwapChain::m_SwapchainImageViews;
+uint32_t SwapChain::m_ImageCount = 0;
+std::vector<VkFramebuffer> SwapChain::m_Framebuffers;
+VkSurfaceCapabilitiesKHR SwapChain::m_SurfaceCapabilities;
+VkSurfaceFormatKHR SwapChain::m_SurfaceFormat;
+VkPresentModeKHR SwapChain::m_PresentMode;
+VkExtent2D SwapChain::m_Extent;
+
 SwapChain::SwapChain()
 {
 	if (!VulkanCore::GetSwapChainSupport())
@@ -35,6 +46,20 @@ SwapChain::~SwapChain()
 	vkDestroySurfaceKHR(VulkanCore::GetInstance(), VulkanCore::GetSurface(), nullptr);
 }
 
+void SwapChain::recreateSwapchain(uint32_t width, uint32_t height)
+{
+
+	vkDeviceWaitIdle(VulkanCore::GetDevice());
+	vkDestroySwapchainKHR(VulkanCore::GetDevice(), m_Swapchain, nullptr);
+	selectFormat();
+	selectPresentMode();
+	selectSwapExtent();
+	createSwapchain();
+	createImageViews();
+	createRenderPass();
+	createFramebuffers();
+}
+
 void SwapChain::selectFormat()
 {
 	uint32_t formatCount;
@@ -48,7 +73,12 @@ void SwapChain::selectFormat()
 		{
 			m_SurfaceFormat = f;
 			return;
-		}
+		}	
+		/*if (f.format == VK_FORMAT_R8G8B8A8_SRGB && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		{
+			m_SurfaceFormat = f;
+			return;
+		}*/
 	}
 
 	m_SurfaceFormat = formats.at(0);
@@ -168,7 +198,8 @@ void SwapChain::createRenderPass()
 
 	VkAttachmentReference attachementReference{};
 	attachementReference.attachment = 0;
-	attachementReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachementReference.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	//attachementReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription subpassDescription{};
 	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
