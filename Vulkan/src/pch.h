@@ -6,6 +6,7 @@
 #include <utility>
 #include <algorithm>
 #include <functional>
+#include <initializer_list>
 
 #include <string>
 #include <sstream>

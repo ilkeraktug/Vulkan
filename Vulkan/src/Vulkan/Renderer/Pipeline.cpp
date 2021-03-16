@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "Pipeline.h"
 
-Pipeline::Pipeline(SwapChain& swapchain, const Shader& shader)
-	:m_Swapchain(swapchain)
+Pipeline::Pipeline(SwapChain& swapchain, const Shader& shader, const VertexBuffer& vertexBuffer)
+	:m_Swapchain(swapchain), m_VertexBuffer(vertexBuffer)
 {
 	createPipeline(shader);
 	createCommandPool();
@@ -19,8 +19,10 @@ Pipeline::~Pipeline()
 void Pipeline::createPipeline(const Shader& shader)
 {
 	VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
-	vertexInputCreateInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputCreateInfo.vertexBindingDescriptionCount = 0;
+	vertexInputCreateInfo.vertexBindingDescriptionCount = 1;
+	vertexInputCreateInfo.pVertexBindingDescriptions = &m_VertexBuffer.GetVertexBinding();
+	vertexInputCreateInfo.vertexAttributeDescriptionCount = m_VertexBuffer.GetVertexAttribute().size();
+	vertexInputCreateInfo.pVertexAttributeDescriptions = m_VertexBuffer.GetVertexAttribute().data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
 	inputAssemblyCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -143,8 +145,12 @@ void Pipeline::createCommandPool()
 
 		vkCmdBeginRenderPass(m_CommandBuffers.at(i), &renderPassBegin, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline(m_CommandBuffers.at(i), VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
-		vkCmdDraw(m_CommandBuffers.at(i), 3, 1, 0, 0);
+
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(m_CommandBuffers.at(i), 0, 1, &m_VertexBuffer.GetBuffer(), offsets);
+		vkCmdDraw(m_CommandBuffers.at(i), m_VertexBuffer.GetSize(), 1, 0, 0);
 
 		VK_ASSERT(vkEndCommandBuffer(m_CommandBuffers.at(i)) == VK_SUCCESS, "Cant end command buffer");
 	}
+
 }

@@ -30,4 +30,6 @@ private:
 
 	static std::unique_ptr<Shader> m_Shader;
 
+	static std::unique_ptr<VertexBuffer> m_VertexBuffer;
+
 };

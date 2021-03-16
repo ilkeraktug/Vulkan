@@ -2,9 +2,7 @@
 #include <vulkan/vulkan.h>
 
 #include "SwapChain.h"
-
-//TODO : Divide shader class to graphics pipeline class!
-//TODO : Shader class only needs to handle shader readings and modules.
+#include "VertexBuffer.h"
 
 class Shader
 {
@@ -15,7 +13,7 @@ public:
 	inline const VkPipelineShaderStageCreateInfo* GetShaderStageCreateInfos() const { return m_StageCreateInfos; }
 
 private:
-	void setupShaderModule(const std::string& vertexSrc, const std::string& fragmentSrc);
+	void setupShaderModule(const std::string& vertexPath, const std::string& fragmentPath);
 	std::string readFile(const std::string& filepath);
 private:
 
