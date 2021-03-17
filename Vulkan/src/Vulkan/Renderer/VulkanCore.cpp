@@ -13,6 +13,7 @@ bool VulkanCore::m_SwapChainSupport = false;
 QueueIndices VulkanCore::m_QueueIndices;
 VkQueue VulkanCore::m_GraphicsQueue;
 VkQueue VulkanCore::m_PresentQueue;
+VkQueue VulkanCore::m_TransferQueue;
 
 
 VulkanCore::VulkanCore()
@@ -129,6 +130,9 @@ void VulkanCore::selectGPU()
 		if (presentSupport)
 			m_QueueIndices.PresentIndex = i;
 
+		if (queueFamilyProperties.at(i).queueFlags & VK_QUEUE_TRANSFER_BIT)
+			m_QueueIndices.TransferIndex = i;
+
 		if (m_QueueIndices.isCompleted())
 			break;
 
@@ -138,7 +142,7 @@ void VulkanCore::selectGPU()
 
 void VulkanCore::createDevice()
 {
-	std::vector<uint32_t> queueIndices = { m_QueueIndices.GraphicsIndex.value(), m_QueueIndices.PresentIndex.value() };
+	std::vector<uint32_t> queueIndices = { m_QueueIndices.GraphicsIndex.value(), m_QueueIndices.PresentIndex.value(), m_QueueIndices.TransferIndex.value() };
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
 	float priorty = 1.0f;
@@ -173,6 +177,7 @@ void VulkanCore::createDevice()
 
 	vkGetDeviceQueue(m_Device, m_QueueIndices.GraphicsIndex.value(), 0, &m_GraphicsQueue);
 	vkGetDeviceQueue(m_Device, m_QueueIndices.PresentIndex.value(), 0, &m_PresentQueue);
+	vkGetDeviceQueue(m_Device, m_QueueIndices.TransferIndex.value(), 0, &m_TransferQueue);
 }
 
 void VulkanCore::createSurface()

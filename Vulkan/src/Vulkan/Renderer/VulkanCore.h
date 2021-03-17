@@ -8,8 +8,9 @@ struct QueueIndices
 {
 	std::optional<uint32_t> GraphicsIndex;
 	std::optional<uint32_t> PresentIndex;
+	std::optional<uint32_t> TransferIndex;
 
-	inline bool isCompleted() { return GraphicsIndex.has_value() && PresentIndex.has_value(); }
+	inline bool isCompleted() { return GraphicsIndex.has_value() && PresentIndex.has_value() && TransferIndex.has_value(); }
 };
 
 class VulkanCore
@@ -27,6 +28,7 @@ public:
 
 	inline static VkQueue& GetGraphicsQueue() { return m_GraphicsQueue; }
 	inline static VkQueue& GetPresentationQueue() { return m_PresentQueue; }
+	inline static VkQueue& GetTransfernQueue() { return m_TransferQueue; }
 
 	inline static bool GetSwapChainSupport() { return m_SwapChainSupport; }
 	
@@ -47,6 +49,7 @@ private:
 	static QueueIndices m_QueueIndices;
 	static VkQueue m_GraphicsQueue;
 	static VkQueue m_PresentQueue;
+	static VkQueue m_TransferQueue;
 
 	const std::vector<const char*> m_DeviceExtension = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 

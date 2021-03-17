@@ -2,11 +2,12 @@
 #include "SwapChain.h"
 #include "Shader.h"
 #include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 class Pipeline
 {
 public:
-	Pipeline(SwapChain& swapchain, const Shader& shader, const VertexBuffer& vertexBuffer);
+	Pipeline(SwapChain& swapchain, const Shader& shader, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 	~Pipeline();
 
 	SwapChain& GetSwapchain() { return m_Swapchain; }
@@ -23,5 +24,6 @@ private:
 	VkCommandPool m_CommandPool;
 	std::vector<VkCommandBuffer> m_CommandBuffers;
 
-	VertexBuffer m_VertexBuffer;
+	VertexBuffer& m_VertexBuffer;
+	IndexBuffer& m_IndexBuffer;
 };

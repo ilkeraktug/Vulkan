@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "Pipeline.h"
 
-Pipeline::Pipeline(SwapChain& swapchain, const Shader& shader, const VertexBuffer& vertexBuffer)
-	:m_Swapchain(swapchain), m_VertexBuffer(vertexBuffer)
+Pipeline::Pipeline(SwapChain& swapchain, const Shader& shader, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer)
+	:m_Swapchain(swapchain), m_VertexBuffer(vertexBuffer), m_IndexBuffer(indexBuffer)
 {
 	createPipeline(shader);
 	createCommandPool();
@@ -147,8 +147,11 @@ void Pipeline::createCommandPool()
 		vkCmdBindPipeline(m_CommandBuffers.at(i), VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
 
 		VkDeviceSize offsets[] = { 0 };
+
 		vkCmdBindVertexBuffers(m_CommandBuffers.at(i), 0, 1, &m_VertexBuffer.GetBuffer(), offsets);
-		vkCmdDraw(m_CommandBuffers.at(i), m_VertexBuffer.GetSize(), 1, 0, 0);
+		vkCmdBindIndexBuffer(m_CommandBuffers.at(i), m_IndexBuffer.GetBuffer(), 0, m_IndexBuffer.GetType());
+
+		vkCmdDrawIndexed(m_CommandBuffers.at(i), m_IndexBuffer.GetCount(), 1, 0, 0, 0);
 
 		VK_ASSERT(vkEndCommandBuffer(m_CommandBuffers.at(i)) == VK_SUCCESS, "Cant end command buffer");
 	}

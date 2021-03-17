@@ -15,14 +15,13 @@ public:
 	inline const VkVertexInputBindingDescription& GetVertexBinding() const { return m_VertexBinding; }
 	inline const std::vector<VkVertexInputAttributeDescription>& GetVertexAttribute() const { return m_VertexAttribute; }
 	inline const VkBuffer& GetBuffer() const { return m_Buffer; }
-	inline const uint32_t GetSize() const { return m_Size / m_Layout.GetStride(); }
+	inline const uint32_t GetVertexCount() const { return m_Size / m_Layout.GetStride(); }
 private:
 	void createVertexBindingDescription();
 	void createVertexAttributeDescription();
 	void createBuffer(float* vertices, uint32_t size);
 
 	uint32_t getMemoryType(uint32_t type, VkMemoryPropertyFlags propertyFlags);
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 private:
 	uint32_t m_Size;
 	BufferLayout m_Layout;
