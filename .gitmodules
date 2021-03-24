@@ -4,3 +4,6 @@
 [submodule "Vulkan\\vendor\\spdlog"]
 	path = Vulkan\\vendor\\spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "Vulkan\\vendor\\glfw"]
+	path = Vulkan\\vendor\\glfw
+	url = https://github.com/ilkeraktug/glfw.git
