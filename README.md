@@ -17,9 +17,9 @@ git submodule update --init --recursive
 
 ___
 
-# ‼️ Important : 
-### ```GenerateProjects.bat``` file generates VS 2019 solution file. If you want to generate another file check [here](https://github.com/premake/premake-core/wiki/Using-Premake)
+# ‼️ Important if you do not have VS2019 ‼️
+#### ```GenerateProjects.bat``` file generates VS 2019 solution file. If you want to generate another file check [here](https://github.com/premake/premake-core/wiki/Using-Premake)
 
-## Example for xcode4 <img src="https://user-images.githubusercontent.com/63074357/112390951-28e0ad80-8d08-11eb-8a8c-f343cd300a26.png" width="32" height="32"> : 
+### Example for xcode4 <img src="https://user-images.githubusercontent.com/63074357/112390951-28e0ad80-8d08-11eb-8a8c-f343cd300a26.png" width="32" height="32"> : 
 ```
 <SolutionDir> vendor\premake5\bin\premake5 xcode4
