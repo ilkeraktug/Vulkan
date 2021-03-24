@@ -8,7 +8,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 VulkanSDK = os.getenv("VULKAN_SDK")
 
 IncludeDir = {}
-IncludeDir["GLFW"] = "Vulkan/vendor/GLFW/include"
+IncludeDir["glfw"] = "Vulkan/vendor/glfw/include"
 IncludeDir["glm"] = "Vulkan/vendor/glm"
 IncludeDir["spdlog"] = "Vulkan/vendor/spdlog/include"
 IncludeDir["stb_image"] = "Vulkan/vendor/stb_image"
@@ -17,7 +17,7 @@ IncludeDir["stb_image"] = "Vulkan/vendor/stb_image"
 IncludeDir["vulkan"] = VulkanSDK .. "/Include"
 
 
-include "Vulkan/vendor/GLFW"
+include "Vulkan/vendor/glfw"
 
 	project "Vulkan"
 		location "Vulkan"
@@ -49,7 +49,7 @@ include "Vulkan/vendor/GLFW"
 	includedirs
 	{
 		"%{prj.name}/src",
-		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.glfw}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.vulkan}",
 		"%{IncludeDir.spdlog}",
@@ -64,7 +64,7 @@ include "Vulkan/vendor/GLFW"
 
 	links
 	{
-		"GLFW",
+		"glfw",
 		"vulkan-1.lib"
 	}
 
