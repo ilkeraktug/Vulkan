@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "Pipeline.h"
 
-Pipeline::Pipeline(SwapChain& swapchain, const Shader& shader, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer)
-	:m_Swapchain(swapchain), m_VertexBuffer(vertexBuffer), m_IndexBuffer(indexBuffer)
+Pipeline::Pipeline(SwapChain& swapchain, const Shader& shader, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, UniformBuffer& uniformBuffer)
+	:m_Swapchain(swapchain), m_VertexBuffer(vertexBuffer), m_IndexBuffer(indexBuffer), m_UniformBuffer(uniformBuffer)
 {
 	createPipeline(shader);
 	createCommandPool();
@@ -51,7 +51,7 @@ void Pipeline::createPipeline(const Shader& shader)
 	rasterizationCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 	rasterizationCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizationCreateInfo.cullMode = VK_CULL_MODE_NONE;
-	rasterizationCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizationCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizationCreateInfo.depthBiasEnable = VK_FALSE;
 	rasterizationCreateInfo.lineWidth = 1.0f;
 
@@ -77,7 +77,9 @@ void Pipeline::createPipeline(const Shader& shader)
 	dynamicStateCreateInfo.pDynamicStates = nullptr;
 
 	VkPipelineLayoutCreateInfo pipelineLayoutCrateInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-	pipelineLayoutCrateInfo.setLayoutCount = 0;
+	pipelineLayoutCrateInfo.setLayoutCount = 1;
+	//pipelineLayoutCrateInfo.pSetLayouts = &(m_UniformBuffer.GetDescriptorSetLayout());
+	pipelineLayoutCrateInfo.pSetLayouts = &m_UniformBuffer.GetDescriptorSetLayout();
 
 
 	VK_ASSERT(vkCreatePipelineLayout(VulkanCore::GetDevice(), &pipelineLayoutCrateInfo, nullptr, &m_PipelineLayout) == VK_SUCCESS, "Failed to create vkCreatePipelineLayout");
@@ -150,6 +152,7 @@ void Pipeline::createCommandPool()
 
 		vkCmdBindVertexBuffers(m_CommandBuffers.at(i), 0, 1, &m_VertexBuffer.GetBuffer(), offsets);
 		vkCmdBindIndexBuffer(m_CommandBuffers.at(i), m_IndexBuffer.GetBuffer(), 0, m_IndexBuffer.GetType());
+		vkCmdBindDescriptorSets(m_CommandBuffers.at(i), VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_UniformBuffer.GetDescriptorSets().at(i), 0, 0);
 
 		vkCmdDrawIndexed(m_CommandBuffers.at(i), m_IndexBuffer.GetCount(), 1, 0, 0, 0);
 

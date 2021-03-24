@@ -14,7 +14,7 @@ QueueIndices VulkanCore::m_QueueIndices;
 VkQueue VulkanCore::m_GraphicsQueue;
 VkQueue VulkanCore::m_PresentQueue;
 VkQueue VulkanCore::m_TransferQueue;
-
+VkCommandPool VulkanCore::m_CommandPool;
 
 VulkanCore::VulkanCore()
 {
@@ -39,8 +39,8 @@ void VulkanCore::Init()
 	selectGPU();
 	createDevice();
 	checkSwapChainSupport();
+	createCommandPool();
 }
-
 
 void VulkanCore::createInstance()
 {
@@ -137,7 +137,7 @@ void VulkanCore::selectGPU()
 			break;
 
 	}
-	
+
 }
 
 void VulkanCore::createDevice()
@@ -156,6 +156,7 @@ void VulkanCore::createDevice()
 	}
 
 	VkPhysicalDeviceFeatures physicalDeviceFeatures{};
+	physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
 
 	VkDeviceCreateInfo deviceCreateInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 	deviceCreateInfo.pEnabledFeatures = &physicalDeviceFeatures;
@@ -208,6 +209,45 @@ void VulkanCore::checkSwapChainSupport()
 		m_SwapChainSupport = true;
 }
 
+void VulkanCore::createCommandPool()
+{
+	VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+	createInfo.queueFamilyIndex = GetQueueIndices().GraphicsIndex.value();
+
+	vkCreateCommandPool(m_Device, &createInfo, nullptr, &m_CommandPool);
+}
+
+VkCommandBuffer VulkanCore::BeginSingleCommandBuffer()
+{
+	VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+	allocateInfo.commandPool = m_CommandPool;
+	allocateInfo.commandBufferCount = 1;
+	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+	VkCommandBuffer commandBuffer;
+	VK_ASSERT(vkAllocateCommandBuffers(m_Device, &allocateInfo, &commandBuffer) == VK_SUCCESS, "Cant vkAllocateCommandBuffers!");
+
+	VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo) == VK_SUCCESS, "Cant vkBeginCommandBuffer!");
+
+	return commandBuffer;
+}
+
+void VulkanCore::EndSingleCommandBuffer(VkCommandBuffer commandBuffer)
+{
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	vkQueueSubmit(m_TransferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkDeviceWaitIdle(m_Device);
+
+	vkFreeCommandBuffers(m_Device, m_CommandPool, 1, &commandBuffer);
+}
 
 #ifdef ENABLE_VALIDATION_LAYERS
 

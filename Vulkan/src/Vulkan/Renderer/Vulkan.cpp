@@ -6,6 +6,9 @@
 #include "VertexBuffer.h"
 
 #include "Shader.h"
+#include "UniformBuffer.h"
+
+#include <glm/gtc/matrix_transform.hpp>
 
 std::unique_ptr<SwapChain> Vulkan::m_Swapchain;
 std::unique_ptr<Pipeline> Vulkan::m_Pipeline;
@@ -13,6 +16,8 @@ std::unique_ptr<Renderer> Vulkan::m_Renderer;
 std::unique_ptr<Shader>	Vulkan::m_Shader;
 std::unique_ptr<VertexBuffer> Vulkan::m_VertexBuffer;
 std::unique_ptr<IndexBuffer> Vulkan::m_IndexBuffer;
+std::unique_ptr<UniformBuffer> Vulkan::m_UniformBuffer;
+std::unique_ptr<Texture> Vulkan::m_Texture;
 
 Vulkan::Vulkan()
 {
@@ -33,12 +38,12 @@ void Vulkan::Init()
 	float vertices[] = 
 	{ 
 		//Vertex Positions,		Colors
-		-0.5f, -0.5f, 0.0f,		1.0f, 0.0f, 1.0f,
-		 0.5f, -0.5f, 0.0f,		1.0f, 1.0f, 0.0f,
-		 0.5f,  0.5f, 0.0f,		1.0f, 1.0f, 1.0f,
-		-0.5f,  0.5f, 0.0f,		1.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f, 0.0f,		1.0f, 0.0f, 1.0f,	1.0f, 0.0f,
+		 0.5f, -0.5f, 0.0f,		1.0f, 1.0f, 0.0f,	0.0f, 0.0f,
+		 0.5f,  0.5f, 0.0f,		1.0f, 1.0f, 1.0f,	0.0f, 1.0f,
+		-0.5f,  0.5f, 0.0f,		1.0f, 0.0f, 0.0f,	1.0f, 1.0f
 	};
-	BufferLayout layout = { {"a_Position", ShaderType::Float3}, {"a_Color", ShaderType::Float3 } };
+	BufferLayout layout = { {"a_Position", ShaderType::Float3}, {"a_Color", ShaderType::Float3 }, {"a_TexCoords", ShaderType::Float2} };
 	m_VertexBuffer.reset(new VertexBuffer(vertices, sizeof(vertices), layout));
 	
 	uint16_t indices[] =
@@ -47,9 +52,17 @@ void Vulkan::Init()
 		2, 3, 0
 	};
 
+	transform.Model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f));
+	transform.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	transform.Projection = glm::perspective(glm::radians(45.0f), (float)m_Swapchain->GetExtent().width / (float)m_Swapchain->GetExtent().height, 0.1f, 10.0f);
+
+	m_Texture.reset(new Texture("assets/textures/face.jpg"));
+	m_UniformBuffer.reset(new UniformBuffer(transform, *m_Texture));
+
 	m_IndexBuffer.reset(new IndexBuffer(indices, sizeof(indices) / sizeof(uint16_t)));
-	m_Pipeline.reset(new Pipeline(*m_Swapchain, *m_Shader, *m_VertexBuffer, *m_IndexBuffer));
+	m_Pipeline.reset(new Pipeline(*m_Swapchain, *m_Shader, *m_VertexBuffer, *m_IndexBuffer, *m_UniformBuffer));
 	m_Renderer.reset(new Renderer(*m_Pipeline));
+
 }
 	
 void Vulkan::Shutdown()
@@ -58,13 +71,20 @@ void Vulkan::Shutdown()
 
 void Vulkan::Run()
 {
-	m_Renderer->Run();
+	float time = glfwGetTime();
+	currentTime = time - lastTime;
+	lastTime = time;
+
+	transform.Model = glm::rotate(transform.Model, glm::radians(90.0f) * currentTime, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	m_Renderer->Run(*m_UniformBuffer);
+
 }
 
 void Vulkan::recreateSwapchain(uint32_t width, uint32_t height)
 {
 	m_Swapchain->recreateSwapchain(width, height);
-	m_Pipeline.reset(new Pipeline(*m_Swapchain, *m_Shader, *m_VertexBuffer, *m_IndexBuffer));
+	m_Pipeline.reset(new Pipeline(*m_Swapchain, *m_Shader, *m_VertexBuffer, *m_IndexBuffer, *m_UniformBuffer));
 	m_Renderer.reset(new Renderer(*m_Pipeline));
 }
 

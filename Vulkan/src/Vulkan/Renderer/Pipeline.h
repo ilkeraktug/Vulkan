@@ -3,14 +3,15 @@
 #include "Shader.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "UniformBuffer.h"
 
 class Pipeline
 {
 public:
-	Pipeline(SwapChain& swapchain, const Shader& shader, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
+	Pipeline(SwapChain& swapchain, const Shader& shader, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, UniformBuffer& uniformBuffer);
 	~Pipeline();
 
-	SwapChain& GetSwapchain() { return m_Swapchain; }
+	inline SwapChain& GetSwapchain() { return m_Swapchain; }
 	const std::vector< VkCommandBuffer>& GetCommandBuffers() { return m_CommandBuffers; }
 private:
 	void createPipeline(const Shader& shader);
@@ -26,4 +27,5 @@ private:
 
 	VertexBuffer& m_VertexBuffer;
 	IndexBuffer& m_IndexBuffer;
+	UniformBuffer& m_UniformBuffer;
 };

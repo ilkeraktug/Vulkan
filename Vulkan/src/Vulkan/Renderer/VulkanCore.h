@@ -33,12 +33,17 @@ public:
 	inline static bool GetSwapChainSupport() { return m_SwapChainSupport; }
 	
 	inline static QueueIndices& GetQueueIndices() { return m_QueueIndices; }
+
+	static VkCommandBuffer BeginSingleCommandBuffer();
+	static void EndSingleCommandBuffer(VkCommandBuffer commandBuffer);
+
 private:
 	void createInstance();
 	void selectGPU();
 	void createDevice();
 	void createSurface();
 	void checkSwapChainSupport();
+	void createCommandPool();
 private:
 	static VkInstance m_Instance;
 	static VkPhysicalDevice m_PhysicalDevice;
@@ -50,6 +55,8 @@ private:
 	static VkQueue m_GraphicsQueue;
 	static VkQueue m_PresentQueue;
 	static VkQueue m_TransferQueue;
+
+	static VkCommandPool m_CommandPool;
 
 	const std::vector<const char*> m_DeviceExtension = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 

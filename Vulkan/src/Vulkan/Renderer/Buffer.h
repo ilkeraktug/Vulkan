@@ -19,6 +19,8 @@ static VkFormat ShaderTypeToVkFormat(ShaderType type)
 	case ShaderType::Float3:	return VK_FORMAT_R32G32B32_SFLOAT;
 	case ShaderType::Float4:	return VK_FORMAT_R32G32B32A32_SFLOAT;
 	}
+
+	return VK_FORMAT_UNDEFINED;
 }
 
 static uint32_t ShaderDataTypeSize(ShaderType type)

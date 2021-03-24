@@ -13,7 +13,7 @@ public:
 	inline const VkSwapchainKHR& GetSwapchainKHR() const { return m_Swapchain; }
 	inline const VkRenderPass& GetRenderPass() const { return m_RenderPass; }
 	inline const std::vector<VkFramebuffer>& GetFramebuffers() const { return m_Framebuffers; }
-	inline const uint32_t GetImageCount() const { return m_ImageCount; }
+	static inline const uint32_t GetImageCount() { return m_ImageCount; }
 
 	static void recreateSwapchain(uint32_t width, uint32_t height);
 

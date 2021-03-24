@@ -9,6 +9,7 @@
 #include "SwapChain.h"
 #include "Pipeline.h"
 #include "Renderer.h"
+#include "Texture.h"
 
 class Vulkan
 {
@@ -32,5 +33,11 @@ private:
 
 	static std::unique_ptr<VertexBuffer> m_VertexBuffer;
 	static std::unique_ptr<IndexBuffer> m_IndexBuffer;
+	static std::unique_ptr<UniformBuffer> m_UniformBuffer;
+	static std::unique_ptr<Texture> m_Texture;
 
+	Transformation transform;
+
+	float lastTime = 0.0f;
+	float currentTime = 0.0f;
 };

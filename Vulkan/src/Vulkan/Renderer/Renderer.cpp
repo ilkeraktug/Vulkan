@@ -20,7 +20,7 @@ Renderer::~Renderer()
 	}
 }
 
-void Renderer::Run()
+void Renderer::Run(UniformBuffer& uniformBuffer)
 {
 	vkWaitForFences(VulkanCore::GetDevice(), 1, &m_Fences.at(currentFrame), VK_TRUE, UINT64_MAX);
 
@@ -35,6 +35,8 @@ void Renderer::Run()
 	m_SwapchainImagesFences[imageIndex] = m_Fences[currentFrame];
 
 	const VkPipelineStageFlags stageMask[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+	uniformBuffer.updateBuffer(imageIndex);
 
 	VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
 	submitInfo.commandBufferCount = m_Pipeline.GetCommandBuffers().size();

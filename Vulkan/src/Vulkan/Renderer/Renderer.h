@@ -2,6 +2,7 @@
 
 #include "SwapChain.h"
 #include "Pipeline.h"
+#include "UniformBuffer.h"
 
 #define MAX_FRAME_IN_FLIGHT 2
 
@@ -11,7 +12,7 @@ public:
 	Renderer(Pipeline& pipeline);
 	~Renderer();
 
-	void Run();
+	void Run(UniformBuffer& uniformBuffer);
 private:
 	void createSyncObjects();
 private:
