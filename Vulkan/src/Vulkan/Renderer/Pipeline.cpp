@@ -78,21 +78,16 @@ void Pipeline::createPipeline(const Shader& shader)
 
 	VkPipelineLayoutCreateInfo pipelineLayoutCrateInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 	pipelineLayoutCrateInfo.setLayoutCount = 1;
-	//pipelineLayoutCrateInfo.pSetLayouts = &(m_UniformBuffer.GetDescriptorSetLayout());
 	pipelineLayoutCrateInfo.pSetLayouts = &m_UniformBuffer.GetDescriptorSetLayout();
-
 
 	VK_ASSERT(vkCreatePipelineLayout(VulkanCore::GetDevice(), &pipelineLayoutCrateInfo, nullptr, &m_PipelineLayout) == VK_SUCCESS, "Failed to create vkCreatePipelineLayout");
 
-	VkAttachmentDescription attachmentDescription{};
-	attachmentDescription.format = m_Swapchain.GetSurfaceFormat().format;
-	attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-	attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
+	depthStencilStateCreateInfo.depthTestEnable = VK_TRUE;
+	depthStencilStateCreateInfo.depthWriteEnable = VK_TRUE;
+	depthStencilStateCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+	depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
+	depthStencilStateCreateInfo.stencilTestEnable = VK_FALSE;
 
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
 	graphicsPipelineCreateInfo.stageCount = 2;
@@ -103,6 +98,7 @@ void Pipeline::createPipeline(const Shader& shader)
 	graphicsPipelineCreateInfo.pRasterizationState = &rasterizationCreateInfo;
 	graphicsPipelineCreateInfo.pMultisampleState = &multisampleCreateInfo;
 	graphicsPipelineCreateInfo.pColorBlendState = &colorBlendCreateInfo;
+	graphicsPipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
 	graphicsPipelineCreateInfo.pDynamicState = nullptr;
 	graphicsPipelineCreateInfo.layout = m_PipelineLayout;
 	graphicsPipelineCreateInfo.renderPass = m_Swapchain.GetRenderPass();
@@ -134,12 +130,14 @@ void Pipeline::createCommandPool()
 
 		vkBeginCommandBuffer(m_CommandBuffers.at(i), &commandBuffer);
 
-		VkClearValue clearColor{ 1.0f, 0.5f, 0.31f, 1.0f };
+		VkClearValue clearScreen[2];
+		clearScreen[0].color = { 1.0f, 0.5f, 0.31f, 1.0f };
+		clearScreen[1].depthStencil = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassBegin{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
 		renderPassBegin.renderPass = m_Swapchain.GetRenderPass();
-		renderPassBegin.clearValueCount = 1;
-		renderPassBegin.pClearValues = &clearColor;
+		renderPassBegin.clearValueCount = 2;
+		renderPassBegin.pClearValues = clearScreen;
 		renderPassBegin.renderArea.extent = m_Swapchain.GetExtent();
 		renderPassBegin.renderArea.offset = { 0, 0 };
 		renderPassBegin.framebuffer = m_Swapchain.GetFramebuffers().at(i);

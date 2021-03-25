@@ -11,11 +11,16 @@ VkRenderPass SwapChain::m_RenderPass;
 std::vector<VkImage> SwapChain::m_SwapchainImages;
 std::vector<VkImageView> SwapChain::m_SwapchainImageViews;
 uint32_t SwapChain::m_ImageCount = 0;
+uint32_t SwapChain::m_Width, SwapChain::m_Heigth;
 std::vector<VkFramebuffer> SwapChain::m_Framebuffers;
 VkSurfaceCapabilitiesKHR SwapChain::m_SurfaceCapabilities;
 VkSurfaceFormatKHR SwapChain::m_SurfaceFormat;
 VkPresentModeKHR SwapChain::m_PresentMode;
 VkExtent2D SwapChain::m_Extent;
+VkImage	SwapChain::m_DepthImage;
+VkDeviceMemory SwapChain::m_DepthMemory;
+VkImageView	SwapChain::m_DepthImageView;
+VkFormat SwapChain::m_DepthFormat;
 
 SwapChain::SwapChain()
 {
@@ -30,6 +35,7 @@ SwapChain::SwapChain()
 		selectSwapExtent();
 		createSwapchain();
 		createImageViews();
+		createDepthBuffer();
 		createRenderPass();
 		createFramebuffers();
 	}
@@ -122,6 +128,68 @@ void SwapChain::selectSwapExtent()
 	m_Extent.height = std::clamp(static_cast<uint32_t>(height), m_SurfaceCapabilities.minImageExtent.height, m_SurfaceCapabilities.maxImageExtent.height);
 }
 
+void SwapChain::createDepthBuffer()
+{
+	std::vector<VkFormat> formats = { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
+
+	VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
+	VkFormatFeatureFlags formatFlag = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+	for (const auto& f : formats)
+	{
+		VkFormatProperties prop;
+		vkGetPhysicalDeviceFormatProperties(VulkanCore::GetPhysicalDevice(), f, &prop);
+
+		if (tiling == VK_IMAGE_TILING_LINEAR && (prop.linearTilingFeatures & formatFlag) == formatFlag)
+		{
+			m_DepthFormat = f;
+		}
+		else if (tiling == VK_IMAGE_TILING_OPTIMAL && (prop.optimalTilingFeatures & formatFlag) == formatFlag)
+		{
+			m_DepthFormat = f;
+		}
+
+		VkImageCreateInfo imageCreateInfo{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+		imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+		imageCreateInfo.format = m_DepthFormat;
+		imageCreateInfo.extent = { m_Extent.width, m_Extent.height, 1 };
+		imageCreateInfo.mipLevels = 1;
+		imageCreateInfo.arrayLayers = 1;
+		imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		imageCreateInfo.tiling = tiling;
+		imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		imageCreateInfo.queueFamilyIndexCount = 0;
+		imageCreateInfo.pQueueFamilyIndices = nullptr;
+		imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		VK_ASSERT(vkCreateImage(VulkanCore::GetDevice(), &imageCreateInfo, nullptr, &m_DepthImage) == VK_SUCCESS, "Cant vkCreateImage!");
+
+		VkMemoryRequirements memoryRequirement;
+		vkGetImageMemoryRequirements(VulkanCore::GetDevice(), m_DepthImage, &memoryRequirement);
+
+		VkMemoryAllocateInfo allocateMemory{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
+		allocateMemory.allocationSize = memoryRequirement.size;
+		allocateMemory.memoryTypeIndex = VulkanCore::getMemoryType(memoryRequirement.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+		VK_ASSERT(vkAllocateMemory(VulkanCore::GetDevice(), &allocateMemory, nullptr, &m_DepthMemory) == VK_SUCCESS, "Cant vkAllocateMemory!");
+
+		vkBindImageMemory(VulkanCore::GetDevice(), m_DepthImage, m_DepthMemory, 0);
+
+		VkImageViewCreateInfo imageViewCreateInfo{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+		imageViewCreateInfo.image = m_DepthImage;
+		imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		imageViewCreateInfo.format = m_DepthFormat;
+		imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+		imageViewCreateInfo.subresourceRange.levelCount = 1;
+		imageViewCreateInfo.subresourceRange.layerCount = 1;
+
+		VK_ASSERT(vkCreateImageView(VulkanCore::GetDevice(), &imageViewCreateInfo, nullptr, &m_DepthImageView) == VK_SUCCESS, "Cant vkAllocateMemory!");
+	}
+}
+
 void SwapChain::createSwapchain()
 {
 	uint32_t imageCount = m_SurfaceCapabilities.minImageCount + 1;
@@ -201,24 +269,43 @@ void SwapChain::createRenderPass()
 	VkAttachmentReference attachementReference{};
 	attachementReference.attachment = 0;
 	attachementReference.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	//attachementReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentDescription depthBufferDescription{};
+	depthBufferDescription.format = m_DepthFormat;
+	depthBufferDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+	depthBufferDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	depthBufferDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthBufferDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	depthBufferDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depthBufferDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	depthBufferDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depthAttachementReference{};
+	depthAttachementReference.attachment = 1;
+	depthAttachementReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription subpassDescription{};
 	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpassDescription.colorAttachmentCount = 1;
 	subpassDescription.pColorAttachments = &attachementReference;
+	subpassDescription.pDepthStencilAttachment = &depthAttachementReference;
 
 	VkSubpassDependency subpassDependency{};
 	subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 	subpassDependency.dstSubpass = 0;
-	subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | 
+										VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+										VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	subpassDependency.srcAccessMask = 0;
-	subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+										VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+	VkAttachmentDescription attachments[] = { attachmentDescription, depthBufferDescription };
 
 	VkRenderPassCreateInfo renderPassCreateInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
-	renderPassCreateInfo.attachmentCount = 1;
-	renderPassCreateInfo.pAttachments = &attachmentDescription;
+	renderPassCreateInfo.attachmentCount = 2;
+	renderPassCreateInfo.pAttachments = attachments;
 	renderPassCreateInfo.subpassCount = 1;
 	renderPassCreateInfo.pSubpasses = &subpassDescription;
 	renderPassCreateInfo.dependencyCount = 1;
@@ -233,10 +320,11 @@ void SwapChain::createFramebuffers()
 
 	for (size_t i = 0; i < m_Framebuffers.size(); i++)
 	{
+		VkImageView attachments[] = { m_SwapchainImageViews[i], m_DepthImageView };
 		VkFramebufferCreateInfo frameBufferCrateInfo{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
 		frameBufferCrateInfo.renderPass = m_RenderPass;
-		frameBufferCrateInfo.attachmentCount = 1;
-		frameBufferCrateInfo.pAttachments = &m_SwapchainImageViews[i];
+		frameBufferCrateInfo.attachmentCount = 2;
+		frameBufferCrateInfo.pAttachments = attachments;
 		frameBufferCrateInfo.width = m_Extent.width;
 		frameBufferCrateInfo.height = m_Extent.height;
 		frameBufferCrateInfo.layers = 1;

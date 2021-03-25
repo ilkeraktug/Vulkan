@@ -249,6 +249,61 @@ void VulkanCore::EndSingleCommandBuffer(VkCommandBuffer commandBuffer)
 	vkFreeCommandBuffers(m_Device, m_CommandPool, 1, &commandBuffer);
 }
 
+void VulkanCore::createTransition(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageAspectFlagBits aspectMask)
+{
+	VkPipelineStageFlags sourceStage;
+	VkPipelineStageFlags destinationStage;
+
+	VkImageMemoryBarrier imageMemoryBarrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+	imageMemoryBarrier.oldLayout = oldLayout;
+	imageMemoryBarrier.newLayout = newLayout;
+	imageMemoryBarrier.srcQueueFamilyIndex = VulkanCore::GetQueueIndices().TransferIndex.value();
+	imageMemoryBarrier.dstQueueFamilyIndex = VulkanCore::GetQueueIndices().TransferIndex.value();
+	imageMemoryBarrier.image = image;
+	imageMemoryBarrier.subresourceRange.aspectMask = aspectMask;
+	imageMemoryBarrier.subresourceRange.layerCount = 1;
+	imageMemoryBarrier.subresourceRange.levelCount = 1;
+	imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+	imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		imageMemoryBarrier.srcAccessMask = 0;
+		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+
+	VkCommandBuffer commandBuffer = VulkanCore::BeginSingleCommandBuffer();
+
+	vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+
+	VulkanCore::EndSingleCommandBuffer(commandBuffer);
+}
+
+uint32_t VulkanCore::getMemoryType(uint32_t type, VkMemoryPropertyFlags propertyFlags)
+{
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(VulkanCore::GetPhysicalDevice(), &memoryProperties);
+
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+	{
+		if ((type & (1 << i)) && ((memoryProperties.memoryTypes[i].propertyFlags & propertyFlags)))
+			return i;
+	}
+
+	VK_ASSERT(false, "Cant find required memory flags!");
+}
+
 #ifdef ENABLE_VALIDATION_LAYERS
 
 void VulkanCore::checkValidationSupport()

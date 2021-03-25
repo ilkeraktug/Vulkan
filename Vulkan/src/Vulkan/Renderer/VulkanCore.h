@@ -36,7 +36,8 @@ public:
 
 	static VkCommandBuffer BeginSingleCommandBuffer();
 	static void EndSingleCommandBuffer(VkCommandBuffer commandBuffer);
-
+	static void createTransition(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageAspectFlagBits aspectMask);
+	static uint32_t getMemoryType(uint32_t type, VkMemoryPropertyFlags propertyFlags);
 private:
 	void createInstance();
 	void selectGPU();

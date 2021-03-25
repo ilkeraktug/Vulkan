@@ -15,6 +15,8 @@ public:
 	inline const std::vector<VkFramebuffer>& GetFramebuffers() const { return m_Framebuffers; }
 	static inline const uint32_t GetImageCount() { return m_ImageCount; }
 
+	inline const VkFormat& GetDepthFormat() const { return m_DepthFormat; }
+
 	static void recreateSwapchain(uint32_t width, uint32_t height);
 
 private:
@@ -22,13 +24,15 @@ private:
 	static void selectPresentMode();
 	static void selectSwapExtent();
 
+	static void createDepthBuffer();
+
 	static void createSwapchain();
 	static void createImageViews();
 	static void createRenderPass();
 	static void createFramebuffers();
 
 private:
-	uint32_t m_Width, m_Heigth;
+	static uint32_t m_Width, m_Heigth;
 
 	static VkSwapchainKHR m_Swapchain;
 
@@ -44,4 +48,10 @@ private:
 	static std::vector<VkFramebuffer> m_Framebuffers;
 
 	static VkRenderPass m_RenderPass;
+
+	static VkFormat m_DepthFormat;
+	static VkImage m_DepthImage;
+	static VkDeviceMemory m_DepthMemory;
+	static VkImageView m_DepthImageView;
+
 };

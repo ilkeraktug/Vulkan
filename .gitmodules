@@ -1,9 +1,9 @@
-[submodule "Vulkan\\vendor\\glm"]
-	path = Vulkan\\vendor\\glm
+[submodule "Vulkan/vendor/glm"]
+	path = Vulkan/vendor/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "Vulkan\\vendor\\spdlog"]
-	path = Vulkan\\vendor\\spdlog
+[submodule "Vulkan/vendor/spdlog"]
+	path = Vulkan/vendor/spdlog
 	url = https://github.com/gabime/spdlog.git
-[submodule "Vulkan\\vendor\\glfw"]
-	path = Vulkan\\vendor\\glfw
+[submodule "Vulkan/vendor/glfw"]
+	path = Vulkan/vendor/glfw
 	url = https://github.com/ilkeraktug/glfw.git

@@ -36,6 +36,7 @@ Texture::Texture(const std::string& filepath)
 
 Texture::~Texture()
 {
+	vkDeviceWaitIdle(VulkanCore::GetDevice());
 	vkDestroySampler(VulkanCore::GetDevice(), m_Sampler, nullptr);
 	vkDestroyImageView(VulkanCore::GetDevice(), m_ImageView, nullptr);
 	vkDestroyImage(VulkanCore::GetDevice(), m_Image, nullptr);
@@ -154,10 +155,6 @@ void Texture::createTransition(VkImageLayout oldLayout, VkImageLayout newLayout)
 		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
-
-
-	imageMemoryBarrier.srcAccessMask = 0;
-	imageMemoryBarrier.dstAccessMask = 0;
 
 	VkCommandBuffer commandBuffer = VulkanCore::BeginSingleCommandBuffer();
 	

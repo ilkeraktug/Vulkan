@@ -34,26 +34,36 @@ void Vulkan::Init()
 	m_VulkanCore.reset(new VulkanCore);
 	m_Swapchain.reset(new SwapChain);
 	m_Shader.reset(new Shader("assets/shaders/vert.spv", "assets/shaders/frag.spv"));
-	
-	float vertices[] = 
+
+	float vertices[] =
 	{ 
-		//Vertex Positions,		Colors
+	/*	//Vertex Positions,		Colors,				//Tex Coords
 		-0.5f, -0.5f, 0.0f,		1.0f, 0.0f, 1.0f,	1.0f, 0.0f,
 		 0.5f, -0.5f, 0.0f,		1.0f, 1.0f, 0.0f,	0.0f, 0.0f,
 		 0.5f,  0.5f, 0.0f,		1.0f, 1.0f, 1.0f,	0.0f, 1.0f,
-		-0.5f,  0.5f, 0.0f,		1.0f, 0.0f, 0.0f,	1.0f, 1.0f
+		-0.5f,  0.5f, 0.0f,		1.0f, 0.0f, 0.0f,	1.0f, 1.0f*/
+	-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+	0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+	0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+	-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+		 -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+	0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+	0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+	-0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f
 	};
 	BufferLayout layout = { {"a_Position", ShaderType::Float3}, {"a_Color", ShaderType::Float3 }, {"a_TexCoords", ShaderType::Float2} };
 	m_VertexBuffer.reset(new VertexBuffer(vertices, sizeof(vertices), layout));
 	
 	uint16_t indices[] =
 	{
-		0, 1, 2,
-		2, 3, 0
+		/*0, 1, 2,
+		2, 3, 0*/
+			0, 1, 2, 2, 3, 0,
+	4, 5, 6, 6, 7, 4
 	};
 
 	transform.Model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f));
-	transform.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	transform.View = glm::lookAt(m_CameraPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	transform.Projection = glm::perspective(glm::radians(45.0f), (float)m_Swapchain->GetExtent().width / (float)m_Swapchain->GetExtent().height, 0.1f, 10.0f);
 
 	m_Texture.reset(new Texture("assets/textures/face.jpg"));
@@ -76,6 +86,15 @@ void Vulkan::Run()
 	lastTime = time;
 
 	transform.Model = glm::rotate(transform.Model, glm::radians(90.0f) * currentTime, glm::vec3(0.0f, 0.0f, 1.0f));
+	transform.View = glm::lookAt(m_CameraPos, m_CameraPos1, glm::vec3(0.0f, 0.0f, 1.0f));
+	if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_W) == GLFW_PRESS)
+	{
+		m_CameraPos1.x += 5.0f * currentTime;
+	}
+	else if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_S) == GLFW_PRESS)
+	{
+		m_CameraPos1.x -= 5.0f * currentTime;
+	}
 
 	m_Renderer->Run(*m_UniformBuffer);
 

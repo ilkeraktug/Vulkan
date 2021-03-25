@@ -38,6 +38,9 @@ private:
 
 	Transformation transform;
 
+	glm::vec3 m_CameraPos = glm::vec3(2.0f, 2.0f, 2.0f);
+	glm::vec3 m_CameraPos1 = glm::vec3(0.0f, 0.0f, 0.0f);
+
 	float lastTime = 0.0f;
 	float currentTime = 0.0f;
 };
