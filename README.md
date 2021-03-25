@@ -10,8 +10,6 @@ git clone https://github.com/ilkeraktug/Vulkan.git
 cd Vulkan
 git submodule update --init --recursive
 ```
-### :warning: If you get error below replace ```\\``` with ```/``` in .gitmodules file.
-<img src="https://user-images.githubusercontent.com/63074357/112389659-28dfae00-8d06-11eb-9be2-f91d4cf6b777.png" width="5000" height="40">
 
 #### When everything is updated, run ```GenerateProjects.bat``` and open Vulkan.sln file.
 
@@ -20,6 +18,6 @@ ___
 # ‼️ Important if you do not have VS2019 ‼️
 #### ```GenerateProjects.bat``` file generates VS 2019 solution file. If you want to generate another file check [here](https://github.com/premake/premake-core/wiki/Using-Premake)
 
-### Example for xcode4 <img src="https://user-images.githubusercontent.com/63074357/112390951-28e0ad80-8d08-11eb-8a8c-f343cd300a26.png" width="32" height="32"> : 
+### Example for MinGW <img src="https://user-images.githubusercontent.com/63074357/112556700-cb1d9580-8ddb-11eb-890d-a66221820231.png" width="32" height="32"> : 
 ```
-<SolutionDir> vendor\premake\bin\premake5 xcode4
+<SolutionDir> vendor\premake\bin\premake5 gmake2
