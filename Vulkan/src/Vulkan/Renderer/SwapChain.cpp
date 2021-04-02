@@ -59,11 +59,13 @@ void SwapChain::recreateSwapchain(uint32_t width, uint32_t height)
 
 	vkDeviceWaitIdle(VulkanCore::GetDevice());
 	vkDestroySwapchainKHR(VulkanCore::GetDevice(), m_Swapchain, nullptr);
+
 	selectFormat();
 	selectPresentMode();
 	selectSwapExtent();
 	createSwapchain();
 	createImageViews();
+	createDepthBuffer();
 	createRenderPass();
 	createFramebuffers();
 }
@@ -268,7 +270,7 @@ void SwapChain::createRenderPass()
 
 	VkAttachmentReference attachementReference{};
 	attachementReference.attachment = 0;
-	attachementReference.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	attachementReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentDescription depthBufferDescription{};
 	depthBufferDescription.format = m_DepthFormat;

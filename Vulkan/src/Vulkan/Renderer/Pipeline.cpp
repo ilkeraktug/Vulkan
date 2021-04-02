@@ -110,6 +110,7 @@ void Pipeline::createPipeline(const Shader& shader)
 void Pipeline::createCommandPool()
 {
 	VkCommandPoolCreateInfo commandPoolCreateInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+	commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	commandPoolCreateInfo.queueFamilyIndex = VulkanCore::GetQueueIndices().GraphicsIndex.value();
 
 	VK_ASSERT(vkCreateCommandPool(VulkanCore::GetDevice(), &commandPoolCreateInfo, nullptr, &m_CommandPool) == VK_SUCCESS, "Failed to create vkCreateCommandPool");
@@ -126,7 +127,7 @@ void Pipeline::createCommandPool()
 	for (size_t i = 0; i < m_CommandBuffers.size(); i++)
 	{
 		VkCommandBufferBeginInfo commandBuffer{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-		commandBuffer.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+		//commandBuffer.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
 		vkBeginCommandBuffer(m_CommandBuffers.at(i), &commandBuffer);
 
@@ -154,6 +155,7 @@ void Pipeline::createCommandPool()
 
 		vkCmdDrawIndexed(m_CommandBuffers.at(i), m_IndexBuffer.GetCount(), 1, 0, 0, 0);
 
+		vkCmdEndRenderPass(m_CommandBuffers.at(i));
 		VK_ASSERT(vkEndCommandBuffer(m_CommandBuffers.at(i)) == VK_SUCCESS, "Cant end command buffer");
 	}
 

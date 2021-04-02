@@ -39,8 +39,8 @@ void Renderer::Run(UniformBuffer& uniformBuffer)
 	uniformBuffer.updateBuffer(imageIndex);
 
 	VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-	submitInfo.commandBufferCount = m_Pipeline.GetCommandBuffers().size();
-	submitInfo.pCommandBuffers = m_Pipeline.GetCommandBuffers().data();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &m_Pipeline.GetCommandBuffers().at(imageIndex);
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = &m_ImageReady[currentFrame];
 	submitInfo.signalSemaphoreCount = 1;

@@ -12,6 +12,7 @@ IncludeDir["glfw"] = "Vulkan/vendor/glfw/include"
 IncludeDir["glm"] = "Vulkan/vendor/glm"
 IncludeDir["spdlog"] = "Vulkan/vendor/spdlog/include"
 IncludeDir["stb_image"] = "Vulkan/vendor/stb_image"
+IncludeDir["tiny_obj_loader"] = "Vulkan/vendor/tiny_obj_loader"
 
 --vulkan include default location
 IncludeDir["vulkan"] = VulkanSDK .. "/Include"
@@ -36,7 +37,9 @@ include "Vulkan/vendor/glfw"
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
 		"%{IncludeDir.stb_image}/**.h",
-		"%{IncludeDir.stb_image}/**.cpp"
+		"%{IncludeDir.stb_image}/**.cpp",
+		"%{IncludeDir.tiny_obj_loader}/**.h",
+		"%{IncludeDir.tiny_obj_loader}/**.cpp",
 	}
 
 	defines
@@ -53,7 +56,8 @@ include "Vulkan/vendor/glfw"
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.vulkan}",
 		"%{IncludeDir.spdlog}",
-		"%{IncludeDir.stb_image}"
+		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.tiny_obj_loader}"
 	}
 
 	libdirs

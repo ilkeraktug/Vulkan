@@ -11,6 +11,14 @@ VertexBuffer::VertexBuffer(float* vertices, uint32_t size, const BufferLayout& l
 	createBuffer(vertices, size);
 }
 
+VertexBuffer::VertexBuffer(const std::vector<Vertex>& vertices, uint32_t size, const BufferLayout& layout)
+	:m_Layout(layout), m_Size(size)
+{
+	createVertexBindingDescription();
+	createVertexAttributeDescription();
+	createBuffer((float*)&vertices.data()->Position.x, size);
+}
+
 VertexBuffer::~VertexBuffer()
 {
 	vkQueueWaitIdle(VulkanCore::GetGraphicsQueue());

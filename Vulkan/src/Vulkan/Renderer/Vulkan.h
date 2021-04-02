@@ -10,6 +10,7 @@
 #include "Pipeline.h"
 #include "Renderer.h"
 #include "Texture.h"
+#include "Model.h"
 
 class Vulkan
 {
@@ -35,6 +36,7 @@ private:
 	static std::unique_ptr<IndexBuffer> m_IndexBuffer;
 	static std::unique_ptr<UniformBuffer> m_UniformBuffer;
 	static std::unique_ptr<Texture> m_Texture;
+	static std::unique_ptr<Model> m_Model;
 
 	Transformation transform;
 

@@ -2,11 +2,22 @@
 #include <vulkan\vulkan_core.h>
 #include "Buffer.h"
 
+#include "glm\glm.hpp"
+
+struct Vertex
+{
+	glm::vec3 Position;
+	glm::vec3 Normal;
+	glm::vec2 TexCoords;
+};
+
+
 class VertexBuffer
 {
 public:
 	VertexBuffer() = default;
 	VertexBuffer(float* vertices, uint32_t size, const BufferLayout& layout);
+	VertexBuffer(const std::vector<Vertex>& vertices, uint32_t size, const BufferLayout& layout);
 	~VertexBuffer();
 
 	inline const BufferLayout& GetLayout() const { return m_Layout; }
