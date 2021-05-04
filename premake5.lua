@@ -10,6 +10,7 @@ VulkanSDK = os.getenv("VULKAN_SDK")
 IncludeDir = {}
 IncludeDir["glfw"] = "Vulkan/vendor/glfw/include"
 IncludeDir["glm"] = "Vulkan/vendor/glm"
+IncludeDir["imgui"] = "Vulkan/vendor/imgui"
 IncludeDir["spdlog"] = "Vulkan/vendor/spdlog/include"
 IncludeDir["stb_image"] = "Vulkan/vendor/stb_image"
 IncludeDir["tiny_obj_loader"] = "Vulkan/vendor/tiny_obj_loader"
@@ -19,6 +20,7 @@ IncludeDir["vulkan"] = VulkanSDK .. "/Include"
 
 
 include "Vulkan/vendor/glfw"
+include "Vulkan/vendor/imgui"
 
 	project "Vulkan"
 		location "Vulkan"
@@ -54,6 +56,7 @@ include "Vulkan/vendor/glfw"
 		"%{prj.name}/src",
 		"%{IncludeDir.glfw}",
 		"%{IncludeDir.glm}",
+		"%{IncludeDir.imgui}",
 		"%{IncludeDir.vulkan}",
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.stb_image}",
@@ -69,10 +72,12 @@ include "Vulkan/vendor/glfw"
 	links
 	{
 		"glfw",
+		"imgui",
 		"vulkan-1.lib"
 	}
 
 	filter { "system:windows" }
+		defines { "PLATFORM_WINDOWS" }
 		systemversion "latest"
 
 	filter { "configurations:Debug" }

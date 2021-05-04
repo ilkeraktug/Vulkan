@@ -1,7 +1,9 @@
 #pragma once
 
-#include "Window.h"
-#include "Vulkan\Renderer\Vulkan.h"
+#include "Core/Window.h"
+#include "Vulkan/Renderer/VulkanCore.h"
+
+#include "tests/TestGraphicsPipeline.h"
 
 struct GLFWwindow;
 
@@ -19,10 +21,13 @@ public:
 
 private:
 	std::unique_ptr<Window> m_Window;
-	std::unique_ptr<Vulkan> m_Vulkan;
+	std::unique_ptr<VulkanCore> m_VulkanCore;
 
 	bool m_Running = true;
 
+	test::Test* m_CurrentTest;
+	test::TestMenu* m_TestMenu;
 private:
 	static Application* s_Application;
+
 };

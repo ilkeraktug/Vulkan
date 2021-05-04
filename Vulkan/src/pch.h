@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vulkan/Core/Core.h"
+
 // Precompiled header
 #include <iostream>
 #include <memory>
@@ -17,5 +19,7 @@
 #include <optional>
 #include <set>
 
+#ifdef PLATFORM_WINDOWS
 #include <Windows.h>
 #include <shellapi.h>
+#endif //PLATFORM_WINDOWS
