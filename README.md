@@ -21,3 +21,5 @@ ___
 ### Example for MinGW : 
 ```
 <SolutionDir> vendor\premake\bin\premake5 gmake2
+
+![](https://media.giphy.com/media/xF6XV9VWX5JacjDCqX/giphy.gif)
