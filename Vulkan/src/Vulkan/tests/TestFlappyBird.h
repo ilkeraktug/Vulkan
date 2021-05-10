@@ -1,9 +1,3 @@
-﻿/*
-*
-* This test is meant for Textures.
-*
-*/
-
 #pragma once
 
 #include <glm/glm.hpp>
@@ -23,17 +17,18 @@
 #include "Vulkan/Objects/QuadObj.h"
 #include "Vulkan/Objects/CubeObj.h"
 
-//
 #include "Vulkan/tests/FlappyBird/PipeObject.h"
+#include "Vulkan/tests/FlappyBird/Background.h"
+#include "Vulkan/tests/FlappyBird/BirdObject.h"
 
-namespace test
-{
-	class TestGraphicsPipeline : public Test
+namespace test {
+
+	class TestFlappyBird : public Test
 	{
 	public:
-		TestGraphicsPipeline() = default;
-		TestGraphicsPipeline(VulkanCore* core);
-		~TestGraphicsPipeline();
+		TestFlappyBird() = default;
+		TestFlappyBird(VulkanCore * core);
+		~TestFlappyBird();
 
 		virtual void OnUpdate(float deltaTime) override;
 		virtual void OnRender() override;
@@ -49,23 +44,31 @@ namespace test
 		virtual void windowResized() override;
 
 	private:
-		VkPipelineLayout m_PipelineLayout;
-		VkPipeline m_GraphicsPipeline;
 		VkDescriptorPool m_DescriptorPool;
-		VkDescriptorSetLayout m_DescriptorSetLayout;
-
-		std::unique_ptr<VulkanVertexBuffer> m_VertexBuffer;
-		std::unique_ptr<VulkanIndexBuffer> m_IndexBuffer;
-		std::unique_ptr<VulkanTexture2D> m_Texture;
-
-		VkDescriptorSet viewProjDescriptorSet;
 
 		Camera* m_Camera;
-
 		glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
 		float m_CameraMoveSpeed = 5.0f;
 
-		std::array<Drawable*, 1> objs;
+		std::array<PipeObject*, 5> m_PipeObjects;
+		std::unique_ptr<BirdObject> m_Bird;
+		std::unique_ptr<Background> m_Background;
 
+		struct
+		{
+			VkPipelineLayout ObjectsPipeline;
+			VkPipelineLayout BackgroundPipeline;
+
+			VkDescriptorSetLayout ObjectsDescriptor;
+			VkDescriptorSetLayout BackgroundDescriptor;
+
+		} layout;
+
+		struct
+		{
+			VkPipeline PipeObject;
+			VkPipeline BirdObject;
+			VkPipeline Background;
+		} pipelines;
 	};
 }

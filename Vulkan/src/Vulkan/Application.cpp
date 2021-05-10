@@ -10,20 +10,22 @@
 #include "Vulkan/Core/Log.h"
 #include "Core/Time.h"
 
-
+#include "tests/TestGraphicsPipeline.h"
+#include "tests/TestFlappyBird.h"
 
 Application::Application()
 {
     Log::Init();
     VK_CORE_INFO("Application created!");
 
-    std::vector<const char*> enableExtension;
+    std::vector<const char*> enableExtension = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
     m_Window.reset(new Window());
 
-    m_VulkanCore.reset(new VulkanCore());
+    m_VulkanCore.reset(new VulkanCore(enableExtension));
 
-    m_CurrentTest = new test::TestGraphicsPipeline(m_VulkanCore.get());
+    //m_CurrentTest = new test::TestGraphicsPipeline(m_VulkanCore.get());
+    m_CurrentTest = new test::TestFlappyBird(m_VulkanCore.get());
     m_TestMenu = new test::TestMenu(m_CurrentTest);
 }
 

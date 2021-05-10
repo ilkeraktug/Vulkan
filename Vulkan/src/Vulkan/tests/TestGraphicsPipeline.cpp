@@ -8,43 +8,40 @@ namespace test
 		Test::Init(core);
 		glfwSetWindowTitle(static_cast<GLFWwindow*>(Window::GetWindow()), "TestGraphicsPipeline");
 
+		float right = m_Core->swapchain.extent.width / 200.0f;
+		float top = m_Core->swapchain.extent.height / 200.0f;
+		m_Camera = new OrthographicCamera(-right, right, -top, top, core);
+
 		float vertices[] =
 		{
-			//Vertex Positions,		Colors,				//Tex Coords
+		//   Vertex Positions,		Colors,				Tex Coords
 			-0.5f, -0.5f, 0.0f,		1.0f, 0.0f, 1.0f,	1.0f, 0.0f,
 			 0.5f, -0.5f, 0.0f,		1.0f, 1.0f, 0.0f,	0.0f, 0.0f,
 			 0.5f,  0.5f, 0.0f,		1.0f, 1.0f, 1.0f,	0.0f, 1.0f,
 			-0.5f,  0.5f, 0.0f,		1.0f, 0.0f, 0.0f,	1.0f, 1.0f
 		};
 
-		//m_VertexBuffer = new VulkanVertexBuffer(vertices, sizeof(vertices), { {"a_Position", ShaderFormat::Float3},  {"a_Color", ShaderFormat::Float3}, {"a_TexCoords", ShaderFormat::Float2} }, m_Core);
 		VertexBufferLayout layout = { {"a_Position", ShaderFormat::Float3},  {"a_Color", ShaderFormat::Float3}, {"a_TexCoords", ShaderFormat::Float2} };
 
-		m_VertexBuffer = new VulkanVertexBuffer(vertices, sizeof(vertices), m_Core);
+		m_VertexBuffer.reset(new VulkanVertexBuffer(vertices, sizeof(vertices), m_Core));
 		m_VertexBuffer->SetLayout(layout);
 
 		uint16_t indices[] =
 		{ 0, 1, 2,
-		  2, 3, 0};
+		  2, 3, 0
+		};
 
 		m_IndexBuffer.reset(new VulkanIndexBuffer(indices, 6, m_Core));
-
-		obj.u_Scene.Model = glm::mat4(1.0f);
-		obj.u_Scene.View = glm::mat4(1.0f);
-		obj.u_Scene.Projection = glm::mat4(1.0f);
-
-		m_UniformBuffer = new VulkanUniformBuffer(sizeof(Object::Transform), m_Core);
-		m_UniformBuffer->copyData(&obj.u_Scene, sizeof(Object::Transform));
-
-		m_ViewProjBuffer = new VulkanUniformBuffer(sizeof(glm::mat4), m_Core);
-		glm::mat4 a = glm::mat4(1.0f);
-		m_ViewProjBuffer->copyData(&a, sizeof(glm::mat4));
 
 		for (int i = 0; i < objs.size(); i++)
 		{
 			objs[i] = new QuadObj(m_Core);
-			objs[i]->SetPosition(i);
 		}
+
+		objs[0]->SetScale(5.0f, 5.0f, 0.0f);
+		objs[0]->SetRotation(0.0f, 0.0f, 45.0f);
+		m_Texture.reset(new VulkanTexture2D("assets/textures/face.jpg", m_Core));
+
 		prepareDescriptorPool();
 		preparePipeline();
 		setCmdBuffers();
@@ -57,19 +54,40 @@ namespace test
 		vkDestroyPipeline(m_Core->GetDevice(), m_GraphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(m_Core->GetDevice(), m_PipelineLayout, nullptr);
 
-		delete m_VertexBuffer;
-		delete m_UniformBuffer;
+		for (int i = 0; i < objs.size(); i++)
+		{
+			delete objs[i];
+		}
+
+		delete m_Camera;
 	}
 
 	void TestGraphicsPipeline::OnUpdate(float deltaTime)
 	{
-		updateUniformBuffers(deltaTime);
 
-		objs[0]->OnUpdate(deltaTime);
-		objs[1]->OnUpdate(deltaTime);
-		objs[2]->OnUpdate(deltaTime);
-		objs[3]->OnUpdate(deltaTime);
-		objs[4]->OnUpdate(deltaTime);
+		if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_A) == GLFW_PRESS)
+		{
+			m_CameraPosition.x -= m_CameraMoveSpeed * deltaTime;
+		}
+		else if(glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_D) == GLFW_PRESS)
+		{
+			m_CameraPosition.x += m_CameraMoveSpeed * deltaTime;
+		}
+
+		if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_W) == GLFW_PRESS)
+		{
+			m_CameraPosition.y += m_CameraMoveSpeed * deltaTime;
+		}
+		else if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_S) == GLFW_PRESS)
+		{
+			m_CameraPosition.y -= m_CameraMoveSpeed * deltaTime;
+		}
+
+		m_Camera->SetPosition(m_CameraPosition);
+
+		objs[0]->Rotate(90.0f * deltaTime, { 0.0f, 0.0f, 1.0f }, Space::Local);
+
+		updateUniformBuffers();
 	}
 
 	void TestGraphicsPipeline::OnRender()
@@ -88,6 +106,8 @@ namespace test
 		else
 			VK_CHECK(err);
 
+
+		//TODO : Fences and Semaphores !
 		vkDeviceWaitIdle(m_Core->GetDevice());
 	}
 
@@ -97,31 +117,36 @@ namespace test
 
 	void TestGraphicsPipeline::prepareDescriptorPool()
 	{
-		VkDescriptorSetLayoutBinding layoutBinding[2];
+		std::vector<VkDescriptorSetLayoutBinding> layoutBindings =
+		{
+		init::descriptorSetLayoutBinding(
+			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			VK_SHADER_STAGE_VERTEX_BIT, 0),
 
-		layoutBinding[0].binding = 0;
-		layoutBinding[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		layoutBinding[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		layoutBinding[0].descriptorCount = 1;	
-		
-		layoutBinding[1].binding = 1;
-		layoutBinding[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		layoutBinding[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		layoutBinding[1].descriptorCount = 1;
+		init::descriptorSetLayoutBinding(
+			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			VK_SHADER_STAGE_VERTEX_BIT, 1),
+
+		init::descriptorSetLayoutBinding(
+			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			VK_SHADER_STAGE_FRAGMENT_BIT, 2),
+		};
 
 		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = init::descriptorSetLayoutCreateInfo();
-		descriptorSetLayoutCI.bindingCount = 2;
-		descriptorSetLayoutCI.pBindings = layoutBinding;
+		descriptorSetLayoutCI.bindingCount = layoutBindings.size();
+		descriptorSetLayoutCI.pBindings = layoutBindings.data();
 
 		VK_CHECK(vkCreateDescriptorSetLayout(m_Core->GetDevice(), &descriptorSetLayoutCI, nullptr, &m_DescriptorSetLayout));
 
-		VkDescriptorPoolSize poolsize{};
-		poolsize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolsize.descriptorCount = 100;
+		std::vector<VkDescriptorPoolSize> poolSizes =
+		{
+			init::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100),
+			init::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100)
+		};
 
 		VkDescriptorPoolCreateInfo descriptorPoolCI = init::descriptorPoolCreateInfo();
-		descriptorPoolCI.poolSizeCount = 1;
-		descriptorPoolCI.pPoolSizes = &poolsize;
+		descriptorPoolCI.poolSizeCount = poolSizes.size();
+		descriptorPoolCI.pPoolSizes = poolSizes.data();
 		descriptorPoolCI.maxSets = 100;
 
 		VK_CHECK(vkCreateDescriptorPool(m_Core->GetDevice(), &descriptorPoolCI, nullptr, &m_DescriptorPool));
@@ -135,7 +160,7 @@ namespace test
 			descriptorSetAI.pSetLayouts = &m_DescriptorSetLayout;
 			VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &descriptorSetAI, &objs[i]->DescriptorSet));
 
-			std::array<VkWriteDescriptorSet, 2> writeDescriptors{};
+			std::array<VkWriteDescriptorSet, 3> writeDescriptors{};
 			writeDescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			writeDescriptors[0].dstSet = objs[i]->DescriptorSet;
 			writeDescriptors[0].dstBinding = 0;
@@ -148,7 +173,14 @@ namespace test
 			writeDescriptors[1].dstBinding = 1;
 			writeDescriptors[1].descriptorCount = 1;
 			writeDescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			writeDescriptors[1].pBufferInfo = &m_ViewProjBuffer->GetBufferInfo();
+			writeDescriptors[1].pBufferInfo = &m_Camera->MatricesBuffer->GetBufferInfo();
+
+			writeDescriptors[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeDescriptors[2].dstSet = objs[i]->DescriptorSet;
+			writeDescriptors[2].dstBinding = 2;
+			writeDescriptors[2].descriptorCount = 1;
+			writeDescriptors[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			writeDescriptors[2].pImageInfo = &m_Texture->descriptor;
 
 			vkUpdateDescriptorSets(m_Core->GetDevice(), writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
 		}
@@ -181,15 +213,21 @@ namespace test
 		rasterizationStateInfo.depthClampEnable = VK_FALSE;
 		rasterizationStateInfo.rasterizerDiscardEnable = VK_FALSE;
 		rasterizationStateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-		rasterizationStateInfo.cullMode = VK_CULL_MODE_NONE;
-		rasterizationStateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;;
+		rasterizationStateInfo.cullMode = 0;
+		rasterizationStateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		rasterizationStateInfo.depthBiasEnable = VK_FALSE;
 		rasterizationStateInfo.lineWidth = 1.0f;
 
 		VkPipelineColorBlendAttachmentState blendAttachment{};
+		blendAttachment.blendEnable = VK_TRUE;
+		blendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+		blendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		blendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+		blendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+		blendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		blendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 		blendAttachment.colorWriteMask = 0xF;
 			//VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		blendAttachment.blendEnable = VK_FALSE;
 
 		VkPipelineColorBlendStateCreateInfo blendState = init::pipelineColorBlendState();
 		blendState.logicOpEnable = VK_FALSE;
@@ -198,7 +236,7 @@ namespace test
 
 		VkPipelineDepthStencilStateCreateInfo depthStencilState = init::pipelineDepthStencilState();
 		depthStencilState.depthBoundsTestEnable = VK_FALSE;
-		depthStencilState.depthWriteEnable = VK_FALSE;
+		depthStencilState.depthWriteEnable = VK_TRUE;
 		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
 		depthStencilState.stencilTestEnable = VK_FALSE;
 
@@ -243,12 +281,13 @@ namespace test
 		vkDestroyShaderModule(m_Core->GetDevice(), shaderStages[1].module, nullptr);
 
 	}
+
 	void TestGraphicsPipeline::setCmdBuffers()
 	{
 		VkCommandBufferBeginInfo cmdBufferBI = init::cmdBufferBeginInfo();
 
 		VkClearValue clearValues[2];
-		clearValues[0].color = { 0.0f, 1.0f, 0.0f, 1.0f };
+		clearValues[0].color = { 0.3f, 0.5f, 0.8f, 1.0f };
 		clearValues[1].depthStencil = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassBI = init::renderPassBeginInfo();
@@ -267,21 +306,12 @@ namespace test
 
 			vkCmdBindPipeline(m_Core->resources.drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
 
-			/*VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(m_Core->resources.drawCmdBuffers[i], 0, 1, &m_VertexBuffer->GetBuffer(), offsets);
-			vkCmdBindIndexBuffer(m_Core->resources.drawCmdBuffers[i], m_IndexBuffer->GetBuffer(), 0, m_IndexBuffer->GetIndexType());
-			vkCmdBindDescriptorSets(m_Core->resources.drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &obj.DescriptorSet, 0, nullptr);
+			/*for(int k = 0; k < objs.size(); k++)
+				objs[k]->draw(m_Core->resources.drawCmdBuffers[i], m_PipelineLayout);*/
 
-			vkCmdDrawIndexed(m_Core->resources.drawCmdBuffers[i], m_IndexBuffer->GetCount(), 1, 0, 0, 0);*/
-	
+			vkCmdBindDescriptorSets(m_Core->resources.drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &objs[0]->DescriptorSet, 0, nullptr);
 
 			objs[0]->draw(m_Core->resources.drawCmdBuffers[i], m_PipelineLayout);
-			objs[1]->draw(m_Core->resources.drawCmdBuffers[i], m_PipelineLayout);
-			objs[2]->draw(m_Core->resources.drawCmdBuffers[i], m_PipelineLayout);
-			objs[3]->draw(m_Core->resources.drawCmdBuffers[i], m_PipelineLayout);
-			objs[4]->draw(m_Core->resources.drawCmdBuffers[i], m_PipelineLayout);
-
-			//quad1->draw(m_Core->resources.drawCmdBuffers[i], m_PipelineLayout);
 
 			vkCmdEndRenderPass(m_Core->resources.drawCmdBuffers[i]);
 
@@ -289,12 +319,9 @@ namespace test
 		}
 
 	}
-	void TestGraphicsPipeline::updateUniformBuffers(float deltaTime)
+	void TestGraphicsPipeline::updateUniformBuffers()
 	{
-		glm::mat4 a = glm::mat4(1.0f);
-		m_ViewProjBuffer->copyData(&a, sizeof(glm::mat4));
 
-		//m_ViewProjBuffer->copyData(&data, sizeof(glm::mat4));
 	}
 
 	void TestGraphicsPipeline::windowResized()
@@ -303,6 +330,10 @@ namespace test
 
 		vkDestroyPipeline(m_Core->GetDevice(), m_GraphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(m_Core->GetDevice(), m_PipelineLayout, nullptr);
+
+		float right = m_Core->swapchain.extent.width / 200.0f;
+		float top = m_Core->swapchain.extent.height / 200.0f;
+		dynamic_cast<OrthographicCamera*>(m_Camera)->SetOrthograhic(-right, right, -top, top);
 
 		preparePipeline();
 		setCmdBuffers();

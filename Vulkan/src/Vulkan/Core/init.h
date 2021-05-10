@@ -156,5 +156,46 @@ namespace init
 		VkDescriptorSetAllocateInfo descriptorSetAI{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
 		
 		return descriptorSetAI;
+	}	
+	
+	inline VkImageMemoryBarrier imageMemoryBarrier()
+	{
+		VkImageMemoryBarrier imageMemoryBarrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+		
+		return imageMemoryBarrier;
+	}	
+	
+	inline VkImageViewCreateInfo imageViewCreateInfo()
+	{
+		VkImageViewCreateInfo imageViewCreateInfo{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+		
+		return imageViewCreateInfo;
+	}	
+	
+	inline VkSamplerCreateInfo samplerCreateInfo()
+	{
+		VkSamplerCreateInfo samplerCreateInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+		
+		return samplerCreateInfo;
+	}	
+	
+	inline VkDescriptorSetLayoutBinding descriptorSetLayoutBinding(VkDescriptorType descriptorType, VkShaderStageFlags shaderStage, uint32_t bindig ,uint32_t descriptorCount = 1)
+	{
+		VkDescriptorSetLayoutBinding layoutBinding{};	
+		layoutBinding.binding = bindig;
+		layoutBinding.descriptorType = descriptorType;
+		layoutBinding.stageFlags = shaderStage;
+		layoutBinding.descriptorCount = 1;
+
+		return layoutBinding;
+	}
+
+	inline VkDescriptorPoolSize descriptorPoolSize(VkDescriptorType type, uint32_t descriptorCount)
+	{
+		VkDescriptorPoolSize poolSize{};
+		poolSize.descriptorCount = descriptorCount;
+		poolSize.type = type;
+
+		return poolSize;
 	}
 }

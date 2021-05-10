@@ -74,6 +74,13 @@ VulkanCore::~VulkanCore()
 	vkDestroyInstance(m_Instance, nullptr);
 }
 
+void VulkanCore::enableDeviceExtension(const std::vector<const char*>& extensionList)
+{
+	for (int i = 0; i < extensionList.size(); i++)
+		if (supportedDeviceExtension(extensionList.at(i)))
+			m_EnabledDeviceExtension.push_back(extensionList.at(i));
+}
+
 const bool VulkanCore::supportedInstanceExtension(const std::string& extensionName) const
 {
 	return std::find(m_SupportedInstanceExtension.begin(), m_SupportedInstanceExtension.end(), extensionName) != m_SupportedInstanceExtension.end();
@@ -329,6 +336,8 @@ void VulkanCore::createPhysicalDevice()
 	vkGetPhysicalDeviceFeatures(m_PhysicalDevice, &m_PhysicalDeviceFeatures);
 	vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &m_PhysicalDeviceMemoryProperties);
 
+	m_EnabledDeviceFeatures.samplerAnisotropy = VK_TRUE;
+
 	uint32_t queueCount;
 	vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueCount, nullptr);
 	if (queueCount > 0)
@@ -385,8 +394,8 @@ void VulkanCore::createLogicalDevice()
 		deviceQueueCreateInfo.push_back(computeQueueCreateInfo);
 	}
 
-	if(supportedDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME))
-		m_EnabledDeviceExtension.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+	/*if(supportedDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME))
+		m_EnabledDeviceExtension.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);*/
 
 	VkDeviceCreateInfo deviceCreateInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 	deviceCreateInfo.queueCreateInfoCount = (uint32_t)deviceQueueCreateInfo.size();

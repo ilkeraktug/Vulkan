@@ -20,6 +20,8 @@ public:
 	VulkanCore(std::vector<const char*> enabledDeviceExtensions);
 	~VulkanCore();
 
+	void enableDeviceExtension(const std::vector<const char*>& extensionList);
+
 	const bool supportedInstanceExtension(const std::string& extensionName) const;
 	const bool supportedDeviceExtension(const std::string& extensionName) const;
 	const uint32_t getQueueIndex(VkQueueFlagBits queueFlag) const;
@@ -29,6 +31,8 @@ public:
 
 	VkDevice GetDevice() { return m_Device; }
 	const VkDevice GetDevice() const { return m_Device; }
+
+	const VkPhysicalDeviceProperties& GetPhysicalDeviceProperties() const { return m_PhysicalDeviceProperties; }
 
 	VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin);
 	VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin);

@@ -3,10 +3,9 @@
 
 layout(location = 0) out vec4 outColor;
 
-layout(location = 0) in vec4 v_Color;
-layout(location = 1) in vec2 v_TexCoords;
+layout(location = 0) in vec2 v_TexCoords;
 
-layout(binding = 2) uniform sampler2D u_Texture;
+layout(binding = 1) uniform sampler2D u_Texture;
 
 void main() 
 {

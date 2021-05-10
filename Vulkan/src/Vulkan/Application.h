@@ -3,7 +3,7 @@
 #include "Core/Window.h"
 #include "Vulkan/Renderer/VulkanCore.h"
 
-#include "tests/TestGraphicsPipeline.h"
+#include "tests/Test.h"
 
 struct GLFWwindow;
 
