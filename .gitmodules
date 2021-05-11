@@ -7,3 +7,6 @@
 [submodule "Vulkan/vendor/glfw"]
 	path = Vulkan/vendor/glfw
 	url = https://github.com/ilkeraktug/glfw.git
+[submodule "Vulkan/vendor/imgui"]
+	path = Vulkan/vendor/imgui
+	url = https://github.com/ilkeraktug/imgui.git
