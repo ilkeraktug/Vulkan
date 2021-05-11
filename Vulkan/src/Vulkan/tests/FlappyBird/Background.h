@@ -12,6 +12,8 @@ public:
 
 	virtual ~Background();
 
+	glm::mat4 GetModelMatrix() { return m_ModelMatrix; }
+
 	std::unique_ptr<VulkanTexture2D> Texture;
 private:
 

@@ -18,6 +18,7 @@
 #include <unordered_set>
 #include <optional>
 #include <set>
+#include <random>>
 
 #ifdef PLATFORM_WINDOWS
 #include <Windows.h>

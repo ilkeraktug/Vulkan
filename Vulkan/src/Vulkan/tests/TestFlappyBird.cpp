@@ -8,23 +8,54 @@ namespace test
 		Test::Init(core);
 		glfwSetWindowTitle(static_cast<GLFWwindow*>(Window::GetWindow()), "TestFlappyBird");
 
-		float right = m_Core->swapchain.extent.width / 200.0f;
-		float top = m_Core->swapchain.extent.height / 200.0f;
+		m_ScreenRight = m_Core->swapchain.extent.width / 200.0f;
+		m_ScreenTop = m_Core->swapchain.extent.height / 200.0f;
 
-		m_Camera = new OrthographicCamera(-right, right, -top, top, core);
+		m_Camera = new OrthographicCamera(-m_ScreenRight, m_ScreenRight, -m_ScreenTop, m_ScreenTop, core);
 
-		for (int i = 0; i < m_PipeObjects.size(); i++)
+		//Create PipeObjects!
 		{
-			m_PipeObjects[i] = new PipeObject("assets/textures/flappyBird/pipe.png", m_Core);
-			m_PipeObjects[i]->Rotate(180.0f * (i % 2));
-			m_PipeObjects[i]->SetPosition(0.0f, -3.0f + 6 * (i % 2), 0.0f);
+			static std::default_random_engine engine;
+			static std::uniform_real_distribution<float> randomFloat(2.5f, 4.0f);
+			float random = randomFloat(engine);
+
+			for (int i = 0; i < m_PipeObjects.size(); i++)
+			{
+				m_PipeObjects[i] = new PipeObject("assets/textures/flappyBird/pipe.png", m_Core);
+				m_PipeObjects[i]->HeightScale = random;
+
+				m_PipeObjects[i]->worldPosX = ((m_ScreenRight * 2.0f) - ((i / 2) * 1.75f));
+
+				//m_PipeObjects[i]->worldPosX = (m_ScreenRight * 2 / m_PipeObjects.size()) + ( 1.0f * (i / 2));
+
+				m_PipeObjects[i]->worldPosY = (i % 2) ? m_ScreenTop : -m_ScreenTop;
+
+				m_PipeObjects[i]->SetRotation(0.0f, 0.0f, 180.0f * (i % 2));
+				m_PipeObjects[i]->SetPosition(
+					m_PipeObjects[i]->worldPosX,
+					m_PipeObjects[i]->worldPosY,
+					0.0f);
+
+				m_PipeObjects[i]->worldScale = (i % 2) ? m_PipeObjects[i]->HeightScale * 2 : (m_ScreenTop * 2) - (m_PipeObjects[i]->HeightScale + m_PipeGap);
+
+				m_PipeObjects[i]->SetScale(1.0f, m_PipeObjects[i]->worldScale, 1.0f);
+
+				if (i % 2 == 1)
+					random = randomFloat(engine);
+			}
 		}
 
-		m_Bird.reset(new BirdObject(m_Core));
-		m_Bird->Rotate(180.0f, { 0.0f, 1.0f, 0.0f });
+		//Create bird!
+		{
+			m_Bird.reset(new BirdObject(m_Core));
+			m_Bird->SetRotation(0.0f, 180.0f, 0.0f);
+		}
 
-		m_Background.reset(new Background(m_Core));
-
+		//Create background!
+		{
+			m_Background.reset(new Background(m_Core));
+			m_Background->SetScale(m_ScreenRight, m_ScreenTop, 1.0f);
+		}
 		prepareDescriptorPool();
 		preparePipeline();
 		setCmdBuffers();
@@ -51,36 +82,64 @@ namespace test
 	}
 
 	void TestFlappyBird::OnUpdate(float deltaTime)
-	{
+	{	
+		//m_Bird->OnUpdate(deltaTime);
 
-		if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_A) == GLFW_PRESS)
+		//Bird Logic
 		{
-			m_CameraPosition.x -= m_CameraMoveSpeed * deltaTime;
-		}
-		else if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_D) == GLFW_PRESS)
-		{
-			m_CameraPosition.x += m_CameraMoveSpeed * deltaTime;
+			if (!gamePaused)
+			{
+				if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
+				{
+
+					m_Bird->Translate({ 0.0f, -3.0f * deltaTime, 0.0 });
+					m_Bird->SetRotation(0.0f, 180.0f, 45.0f);
+					m_Bird->Translate({ 0.0f, 0.5f * deltaTime, 0.0 });
+
+				}
+				else
+				{
+					m_Bird->Translate({ 0.0f, 1.0f * deltaTime, 0.0 });
+					m_Bird->SetRotation(0.0f, 180.0f, -45.0f);
+				}
+
+				if (m_Bird->Position.y > m_ScreenTop)
+					m_Bird->SetPosition(m_Bird->Position.x, m_ScreenTop, 0.0f);
+				else if (m_Bird->Position.y < -m_ScreenTop)
+					m_Bird->SetPosition(m_Bird->Position.x, -m_ScreenTop, 0.0f);
+			}
 		}
 
-		if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_W) == GLFW_PRESS)
+		//Pipe Logic
 		{
-			m_CameraPosition.y += m_CameraMoveSpeed * deltaTime;
-		}
-		else if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_S) == GLFW_PRESS)
-		{
-			m_CameraPosition.y -= m_CameraMoveSpeed * deltaTime;
-		}
+			static std::default_random_engine engine;
+			static std::uniform_real_distribution<float> randomFloat(2.5f, 4.5f);
+			float random = randomFloat(engine);
 
-		m_Camera->SetPosition(m_CameraPosition);
-		
-		/*if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
-		{
-			m_Bird->Translate({ 0.0f, -5.0f * deltaTime, 0.0 });
-			m_Bird->SetRotation(0.0f, 180.0f, 45.0f);
-		}
+			for (int i = 0; i < m_PipeObjects.size(); i++)
+			{
+				if (m_PipeObjects[i]->Position.x <= -(m_ScreenRight + m_PipeObjects[i]->Scale.x))
+				{
+					m_PipeObjects[i]->HeightScale = random;
 
-		m_Bird->Translate({ 0.5f * deltaTime, 2.0f * deltaTime, 0.0 });
-		m_Bird->SetRotation(0.0f, 180.0f, -45.0f);*/
+					m_PipeObjects[i]->SetRotation(0.0f, 0.0f, 180.0f * (i % 2));
+					m_PipeObjects[i]->SetPosition(
+						m_ScreenRight,
+						(i % 2) ? m_ScreenTop : -m_ScreenTop,
+						0.0f);
+
+					m_PipeObjects[i]->SetScale(1.0f, (i % 2) ? m_PipeObjects[i]->HeightScale * 2 : (m_ScreenTop * 2) - (m_PipeObjects[i]->HeightScale / 2 + m_PipeGap), 1.0f);
+
+					if (i % 2 == 1)
+						random = randomFloat(engine);
+				}
+				if(!gamePaused)
+					m_PipeObjects[i]->Translate({ -2.5f * deltaTime, 0.0f, 0.0f });
+			}
+
+			if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_ESCAPE) == GLFW_PRESS)
+				gamePaused = !gamePaused;
+		}
 
 		updateUniformBuffers();
 	}
@@ -92,7 +151,7 @@ namespace test
 		m_Core->resources.submitInfo.commandBufferCount = 1;
 		m_Core->resources.submitInfo.pCommandBuffers = &m_Core->resources.drawCmdBuffers[m_Core->resources.imageIndex];
 
-		//setCmdBuffers();
+		setCmdBuffers();
 		VK_CHECK(vkQueueSubmit(m_Core->queue.GraphicsQueue, 1, &m_Core->resources.submitInfo, VK_NULL_HANDLE));
 
 		VkResult err = m_Core->Submit();
@@ -407,6 +466,10 @@ namespace test
 			renderPassBI.framebuffer = m_Core->resources.frameBuffers[i];
 			vkCmdBeginRenderPass(m_Core->resources.drawCmdBuffers[i], &renderPassBI, VK_SUBPASS_CONTENTS_INLINE);
 
+			vkCmdBindPipeline(m_Core->resources.drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.Background);
+
+			m_Background->draw(m_Core->resources.drawCmdBuffers[i], layout.BackgroundPipeline);
+
 			vkCmdBindPipeline(m_Core->resources.drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.PipeObject);
 
 			for(int pipeIndex = 0; pipeIndex < m_PipeObjects.size(); pipeIndex++)
@@ -422,9 +485,11 @@ namespace test
 		}
 
 	}
+
 	void TestFlappyBird::updateUniformBuffers()
 	{
-
+		glm::mat4 backgroundMatrix = m_Camera->GetProjectionMatrix() * glm::mat4(glm::mat3(m_Camera->GetViewMatrix())) * m_Background->GetModelMatrix();
+		m_Background->ModelBuffer->copyData(&backgroundMatrix, sizeof(glm::mat4));
 	}
 
 	void TestFlappyBird::windowResized()
@@ -437,9 +502,11 @@ namespace test
 		vkDestroyPipelineLayout(m_Core->GetDevice(), layout.ObjectsPipeline, nullptr);
 		vkDestroyPipelineLayout(m_Core->GetDevice(), layout.BackgroundPipeline, nullptr);
 
-		float right = m_Core->swapchain.extent.width / 200.0f;
-		float top = m_Core->swapchain.extent.height / 200.0f;
-		dynamic_cast<OrthographicCamera*>(m_Camera)->SetOrthograhic(-right, right, -top, top);
+		m_ScreenRight = m_Core->swapchain.extent.width / 200.0f;
+		m_ScreenTop = m_Core->swapchain.extent.height / 200.0f;
+		dynamic_cast<OrthographicCamera*>(m_Camera)->SetOrthograhic(-m_ScreenRight, m_ScreenRight, -m_ScreenTop, m_ScreenTop);
+	
+		m_Background->SetScale(m_ScreenRight, m_ScreenTop, 1.0f);
 
 		preparePipeline();
 		setCmdBuffers();

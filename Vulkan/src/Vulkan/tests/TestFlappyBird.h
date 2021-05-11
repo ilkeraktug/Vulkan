@@ -47,10 +47,19 @@ namespace test {
 		VkDescriptorPool m_DescriptorPool;
 
 		Camera* m_Camera;
-		glm::vec3 m_CameraPosition = { 0.0f, 0.0f, 0.0f };
-		float m_CameraMoveSpeed = 5.0f;
 
-		std::array<PipeObject*, 5> m_PipeObjects;
+		float m_ScreenRight;
+		float m_ScreenTop;
+
+		std::array<PipeObject*, 16> m_PipeObjects;
+		float m_PipeGap = 0.5f;
+
+		bool gamePaused = false;
+
+		bool firstTime = true;
+
+		int gap_position[10] = { 3, 1, 4, 1, 5, 9, 2, 6, 5, 3 };
+
 		std::unique_ptr<BirdObject> m_Bird;
 		std::unique_ptr<Background> m_Background;
 

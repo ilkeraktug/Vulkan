@@ -6,3 +6,8 @@ PipeObject::PipeObject(const std::string& texturePath, VulkanCore* core)
 {
 	Texture.reset(new VulkanTexture2D(texturePath, core));
 }
+
+void PipeObject::DestroyPipe(float xPos)
+{
+
+}

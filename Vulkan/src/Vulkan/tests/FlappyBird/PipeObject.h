@@ -12,7 +12,17 @@ public:
 
 	virtual ~PipeObject() {};
 
+	void DestroyPipe(float xPos);
+
 	std::unique_ptr<VulkanTexture2D> Texture;
+
+	float HeightScale = 3.0f;
+	float PipeGap = 0.05f;
+
+	float worldPosX;
+	float worldPosY;
+	float worldScale;
+
 private:
 
 };

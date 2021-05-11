@@ -12,3 +12,7 @@ BirdObject::BirdObject(VulkanCore* core)
 BirdObject::~BirdObject()
 {
 }
+
+void BirdObject::OnUpdate(float deltaTime)
+{
+}

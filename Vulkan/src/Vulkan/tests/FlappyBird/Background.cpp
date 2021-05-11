@@ -7,13 +7,13 @@ Background::Background(VulkanCore* core)
 	float vertices[] =
 	{
 		//Vertex Positions,
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.5f,  0.5f, 0.0f,
-		-0.5f,  0.5f, 0.0f,
+		-1.0f, -1.0f, 0.5f, 0.0f, 0.0f,
+		 1.0f, -1.0f, 0.5f, 1.0f, 0.0f,
+		 1.0f,  1.0f, 0.5f, 1.0f, 1.0f,
+		-1.0f,  1.0f, 0.5f, 0.0f, 1.0f
 	};
 
-	VertexBufferLayout layout = { {"a_Position", ShaderFormat::Float3} };
+	VertexBufferLayout layout = { {"a_Position", ShaderFormat::Float3},{"a_TexCoords", ShaderFormat::Float2} };
 
 	VertexBuffer.reset(new VulkanVertexBuffer(vertices, sizeof(vertices), core));
 	VertexBuffer->SetLayout(layout);

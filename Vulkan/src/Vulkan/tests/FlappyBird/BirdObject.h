@@ -12,7 +12,10 @@ public:
 
 	virtual ~BirdObject();
 
+	virtual void OnUpdate(float deltaTime);
+
 	std::unique_ptr<VulkanTexture2D> Texture;
 private:
+	bool isRepeated = false;
 
 };
