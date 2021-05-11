@@ -33,4 +33,3 @@ ___
 ### 10 quads rotate its on axis.
 ![](https://media.giphy.com/media/JJxcYghZDe8AEXRSkF/giphy.gif)
 
-
