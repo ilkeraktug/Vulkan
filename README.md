@@ -8,7 +8,7 @@
 ```
 git clone https://github.com/ilkeraktug/Vulkan.git
 cd Vulkan
-git submodule update --init --recursive
+git submodule update --init --recursive --remote
 ```
 #### ⚠️ You need to install Vulkan SDK and should be added to PATH. VulkanSDK can be downloaded from [here.](https://www.lunarg.com/vulkan-sdk/)
 #### When everything is updated, run ```GenerateProjects.bat``` and open Vulkan.sln file.
@@ -26,14 +26,21 @@ ___
 # Show-Off
 
 ## Main Branch
-### Object loader
-![](https://media.giphy.com/media/qlLTXPyte5RcKfyGUH/giphy.gif)
+### Flappy Bird Clone
 
-## Development Branch
+#### First Commit
+![VulkanFlappyBird](https://user-images.githubusercontent.com/63074357/117894685-956a3880-b2c5-11eb-898c-fa338b940228.png)
+
+
+#### It is work in progress.
+![](https://media.giphy.com/media/xXb7TnmRYAsqZ1XcZK/giphy.gif)
+##### There is no UI and collision detecting for now. Soon I will add them. 
+
+
+## Old Works
 ### 10 quads rotate its on axis.
 ![](https://media.giphy.com/media/JJxcYghZDe8AEXRSkF/giphy.gif)
 
-### TestFlappyBird ( Work in progress.)
-
-![VulkanFlappyBird](https://user-images.githubusercontent.com/63074357/117676099-eab72480-b1b5-11eb-99fc-455763a25e71.png)
+### Object loader
+![](https://media.giphy.com/media/qlLTXPyte5RcKfyGUH/giphy.gif)
 
