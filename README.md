@@ -40,7 +40,3 @@ ___
 ## Old Works
 ### 10 quads rotate its on axis.
 ![](https://media.giphy.com/media/JJxcYghZDe8AEXRSkF/giphy.gif)
-
-### Object loader
-![](https://media.giphy.com/media/qlLTXPyte5RcKfyGUH/giphy.gif)
-
