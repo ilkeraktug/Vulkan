@@ -33,7 +33,3 @@ ___
 ### 10 quads rotate its on axis.
 ![](https://media.giphy.com/media/JJxcYghZDe8AEXRSkF/giphy.gif)
 
-### TestFlappyBird ( Work in progress.)
-
-![VulkanFlappyBird](https://user-images.githubusercontent.com/63074357/117676099-eab72480-b1b5-11eb-99fc-455763a25e71.png)
-
