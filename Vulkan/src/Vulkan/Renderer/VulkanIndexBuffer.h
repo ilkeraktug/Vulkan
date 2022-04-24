@@ -73,6 +73,7 @@ private:
 		region.size = m_Size;
 
 		VkCommandBuffer copyCmd = m_Core->createCopyCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
 		vkCmdCopyBuffer(copyCmd, stageBuffer, m_Buffer, 1, &region);
 		VK_CHECK(vkEndCommandBuffer(copyCmd));
 
@@ -81,7 +82,8 @@ private:
 		submitInfo.pCommandBuffers = &copyCmd;
 
 		vkQueueSubmit(m_Core->queue.TransferQueue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(m_Core->queue.TransferQueue);
+		vkQueueWaitIdle(m_Core->queue.GraphicsQueue);
+		vkDeviceWaitIdle(m_Core->GetDevice());
 
 		vkFreeCommandBuffers(m_Core->GetDevice(), m_Core->resources.copyCommandPool, 1, &copyCmd);
 

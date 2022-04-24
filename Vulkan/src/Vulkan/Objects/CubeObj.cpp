@@ -61,12 +61,12 @@ CubeObj::~CubeObj()
 {
 }
 
-void CubeObj::draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
+void CubeObj::draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int i)
 {
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &VertexBuffer->GetBuffer(), offsets);
 
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &DescriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &DescriptorSets[i], 0, nullptr);
 
 	vkCmdDraw(commandBuffer, 36, 1, 0, 0);
 }

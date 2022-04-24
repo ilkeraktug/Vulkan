@@ -18,7 +18,7 @@ VulkanCore::VulkanCore()
 
 	createSyncObjs();
 
-	//initImGui();
+	initImGui();
 }
 
 VulkanCore::VulkanCore(std::vector<const char*> enabledDeviceExtensions)
@@ -34,7 +34,7 @@ VulkanCore::VulkanCore(std::vector<const char*> enabledDeviceExtensions)
 	createFrameBuffer();
 
 	createSyncObjs();
-	//initImGui();
+	initImGui();
 }
 
 VulkanCore::~VulkanCore()
@@ -43,6 +43,8 @@ VulkanCore::~VulkanCore()
 	if (m_DebugMessenger != VK_NULL_HANDLE)
 		vkDestroyDebugUtilsMessenger(m_Instance, m_DebugMessenger, nullptr);
 #endif //ENABLE_VALIDATION_LAYERS
+
+	vkDestroyDescriptorPool(m_Device, imgui.descriptorPool, nullptr);
 
 	vkDestroySemaphore(m_Device, sync.imageRendered, nullptr);
 	vkDestroySemaphore(m_Device, sync.imageAvaible, nullptr);

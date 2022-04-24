@@ -5,9 +5,10 @@ Drawable::~Drawable()
 {
 }
 
-void Drawable::draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout)
+void Drawable::draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int i)
 {
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &DescriptorSet, 0, nullptr);
+
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &DescriptorSets[i], 0, nullptr);
 
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &VertexBuffer->GetBuffer(), offsets);
@@ -213,6 +214,27 @@ void Drawable::Rotate(float angle, glm::vec3 axis, Space space)
 	}
 
 	updateUniformBuffers();
+}
+
+bool Drawable::CheckCollision(const Drawable& other, float screenTop)
+{
+	if (other.Position.x <= Position.x + Scale.x / 2.0f && other.Position.x >= Position.x - Scale.x / 2.0f)
+	{
+		if (Position.y <= 0.0f)
+		{
+			if (-other.Position.y >= ((-Scale.y / 2) + screenTop - (other.Scale.y / 2)))
+				return true;
+		}
+		else
+		{
+			if (-other.Position.y <= ((Scale.y / 2) - screenTop + (other.Scale.y / 2)))
+				return true;
+		}
+
+		return false;
+	}
+	else
+		return false;
 }
 
 void Drawable::updateUniformBuffers()

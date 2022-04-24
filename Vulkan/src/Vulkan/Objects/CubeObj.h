@@ -10,7 +10,7 @@ public:
 
 	virtual ~CubeObj();
 
-	virtual void draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout) override;
+	virtual void draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int i) override;
 
 	virtual void Rotate(float angle, const glm::vec3& axis);
 

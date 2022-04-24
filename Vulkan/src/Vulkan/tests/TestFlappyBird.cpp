@@ -13,52 +13,11 @@ namespace test
 
 		m_Camera = new OrthographicCamera(-m_ScreenRight, m_ScreenRight, -m_ScreenTop, m_ScreenTop, core);
 
-		//Create PipeObjects!
-		{
-			static std::default_random_engine engine;
-			static std::uniform_real_distribution<float> randomFloat(2.5f, 4.0f);
-			float random = randomFloat(engine);
+		OnGameStart();
 
-			for (int i = 0; i < m_PipeObjects.size(); i++)
-			{
-				m_PipeObjects[i] = new PipeObject("assets/textures/flappyBird/pipe.png", m_Core);
-				m_PipeObjects[i]->HeightScale = random;
-
-				m_PipeObjects[i]->worldPosX = ((m_ScreenRight * 2.0f) - ((i / 2) * 1.75f));
-
-				//m_PipeObjects[i]->worldPosX = (m_ScreenRight * 2 / m_PipeObjects.size()) + ( 1.0f * (i / 2));
-
-				m_PipeObjects[i]->worldPosY = (i % 2) ? m_ScreenTop : -m_ScreenTop;
-
-				m_PipeObjects[i]->SetRotation(0.0f, 0.0f, 180.0f * (i % 2));
-				m_PipeObjects[i]->SetPosition(
-					m_PipeObjects[i]->worldPosX,
-					m_PipeObjects[i]->worldPosY,
-					0.0f);
-
-				m_PipeObjects[i]->worldScale = (i % 2) ? m_PipeObjects[i]->HeightScale * 2 : (m_ScreenTop * 2) - (m_PipeObjects[i]->HeightScale + m_PipeGap);
-
-				m_PipeObjects[i]->SetScale(1.0f, m_PipeObjects[i]->worldScale, 1.0f);
-
-				if (i % 2 == 1)
-					random = randomFloat(engine);
-			}
-		}
-
-		//Create bird!
-		{
-			m_Bird.reset(new BirdObject(m_Core));
-			m_Bird->SetRotation(0.0f, 180.0f, 0.0f);
-		}
-
-		//Create background!
-		{
-			m_Background.reset(new Background(m_Core));
-			m_Background->SetScale(m_ScreenRight, m_ScreenTop, 1.0f);
-		}
 		prepareDescriptorPool();
 		preparePipeline();
-		setCmdBuffers();
+
 	}
 
 	TestFlappyBird::~TestFlappyBird()
@@ -83,11 +42,10 @@ namespace test
 
 	void TestFlappyBird::OnUpdate(float deltaTime)
 	{	
-		//m_Bird->OnUpdate(deltaTime);
 
-		//Bird Logic
+		if (!gamePaused)
 		{
-			if (!gamePaused)
+			//Bird Logic
 			{
 				if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
 				{
@@ -99,7 +57,7 @@ namespace test
 				}
 				else
 				{
-					m_Bird->Translate({ 0.0f, 1.0f * deltaTime, 0.0 });
+					m_Bird->Translate({ 0.0f, 1.5f * deltaTime, 0.0 });
 					m_Bird->SetRotation(0.0f, 180.0f, -45.0f);
 				}
 
@@ -108,37 +66,57 @@ namespace test
 				else if (m_Bird->Position.y < -m_ScreenTop)
 					m_Bird->SetPosition(m_Bird->Position.x, -m_ScreenTop, 0.0f);
 			}
-		}
 
-		//Pipe Logic
-		{
-			static std::default_random_engine engine;
-			static std::uniform_real_distribution<float> randomFloat(2.5f, 4.5f);
-			float random = randomFloat(engine);
-
-			for (int i = 0; i < m_PipeObjects.size(); i++)
+			//Pipe Logic
 			{
-				if (m_PipeObjects[i]->Position.x <= -(m_ScreenRight + m_PipeObjects[i]->Scale.x))
+				static std::default_random_engine engine;
+				static std::uniform_real_distribution<float> randomFloat(2.5f, 4.5f);
+				float random = randomFloat(engine);
+
+				for (int i = 0; i < m_PipeObjects.size(); i++)
 				{
-					m_PipeObjects[i]->HeightScale = random;
+					if (m_PipeObjects[i]->Position.x <= -(m_ScreenRight + m_PipeObjects[i]->Scale.x))
+					{
+						m_PipeObjects[i]->HeightScale = random;
 
-					m_PipeObjects[i]->SetRotation(0.0f, 0.0f, 180.0f * (i % 2));
-					m_PipeObjects[i]->SetPosition(
-						m_ScreenRight,
-						(i % 2) ? m_ScreenTop : -m_ScreenTop,
-						0.0f);
+						m_PipeObjects[i]->SetRotation(0.0f, 0.0f, 180.0f * (i % 2));
+						m_PipeObjects[i]->SetPosition(
+							m_ScreenRight,
+							(i % 2) ? m_ScreenTop : -m_ScreenTop,
+							0.0f);
 
-					m_PipeObjects[i]->SetScale(1.0f, (i % 2) ? m_PipeObjects[i]->HeightScale * 2 : (m_ScreenTop * 2) - (m_PipeObjects[i]->HeightScale / 2 + m_PipeGap), 1.0f);
+						m_PipeObjects[i]->SetScale(1.0f, (i % 2) ? m_PipeObjects[i]->HeightScale * 2 : (m_ScreenTop * 2) - (m_PipeObjects[i]->HeightScale / 2 + m_PipeGap), 1.0f);
 
-					if (i % 2 == 1)
-						random = randomFloat(engine);
-				}
-				if(!gamePaused)
+						if (i % 2 == 1)
+							random = randomFloat(engine);
+
+
+					}
+
 					m_PipeObjects[i]->Translate({ -2.5f * deltaTime, 0.0f, 0.0f });
+				}
+
+				if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_ESCAPE) == GLFW_PRESS)
+					gamePaused = !gamePaused;
 			}
 
-			if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_ESCAPE) == GLFW_PRESS)
-				gamePaused = !gamePaused;
+			{
+				for (int i = 0; i < m_PipeObjects.size(); i++)
+				{
+					if (m_PipeObjects[i]->CheckCollision(*m_Bird, m_ScreenTop))
+					{
+						OnGameOver(deltaTime);
+					}
+				}
+
+				for (int i = 0; i < m_PipeObjects.size(); i += 2)
+				{
+					if (m_PipeObjects[i]->Position.x <= 0.01f && m_PipeObjects[i]->Position.x >= -0.01f)
+					{
+						m_Score++;
+					}
+				}
+			}
 		}
 
 		updateUniformBuffers();
@@ -152,6 +130,7 @@ namespace test
 		m_Core->resources.submitInfo.pCommandBuffers = &m_Core->resources.drawCmdBuffers[m_Core->resources.imageIndex];
 
 		setCmdBuffers();
+
 		VK_CHECK(vkQueueSubmit(m_Core->queue.GraphicsQueue, 1, &m_Core->resources.submitInfo, VK_NULL_HANDLE));
 
 		VkResult err = m_Core->Submit();
@@ -168,6 +147,26 @@ namespace test
 
 	void TestFlappyBird::OnImGuiRender()
 	{
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+
+		ImGui::NewFrame();
+	
+		if (gamePaused )
+		{
+			if(ImGui::Button("PLAY", { 100, 50 }))
+				OnRestartGame();
+		}
+		bool scoreOpen = true;
+		ImGui::Begin("SCORES", &scoreOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::Text("Score : ");
+		ImGui::SameLine();
+		ImGui::Text(std::to_string(m_Score).c_str());	
+		
+		ImGui::Text("Highest Score : ");
+		ImGui::SameLine();
+		ImGui::Text(std::to_string(m_HighestScore).c_str());
+		ImGui::End();
 	}
 
 	void TestFlappyBird::prepareDescriptorPool()
@@ -211,8 +210,9 @@ namespace test
 
 		std::vector<VkDescriptorPoolSize> poolSizes =
 		{
-			init::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100),
-			init::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100)
+			init::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 18 * 3),
+			init::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 18 * 3),
+			init::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 18 * 3)
 		};
 
 		VkDescriptorPoolCreateInfo descriptorPoolCI = init::descriptorPoolCreateInfo();
@@ -223,103 +223,113 @@ namespace test
 		VK_CHECK(vkCreateDescriptorPool(m_Core->GetDevice(), &descriptorPoolCI, nullptr, &m_DescriptorPool));
 
 		//Descriptor Set for Pipe OBJs
-		for (int i = 0; i < m_PipeObjects.size(); i++)
 		{
+			for (int i = 0; i < m_PipeObjects.size(); i++)
+			{
+				for (int j = 0; j < 3; j++)
+				{
+					VkDescriptorSetAllocateInfo descriptorSetAI = init::descriptorSetAllocateInfo();
+					descriptorSetAI.descriptorPool = m_DescriptorPool;
+					descriptorSetAI.descriptorSetCount = 1;
+					descriptorSetAI.pSetLayouts = &layout.ObjectsDescriptor;
+					VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &descriptorSetAI, &m_PipeObjects[i]->DescriptorSets[j]));
 
-			VkDescriptorSetAllocateInfo descriptorSetAI = init::descriptorSetAllocateInfo();
-			descriptorSetAI.descriptorPool = m_DescriptorPool;
-			descriptorSetAI.descriptorSetCount = 1;
-			descriptorSetAI.pSetLayouts = &layout.ObjectsDescriptor;
-			VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &descriptorSetAI, &m_PipeObjects[i]->DescriptorSet));
+					std::array<VkWriteDescriptorSet, 3> writeDescriptors{};
+					writeDescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					writeDescriptors[0].dstSet = m_PipeObjects[i]->DescriptorSets[j];
+					writeDescriptors[0].dstBinding = 0;
+					writeDescriptors[0].descriptorCount = 1;
+					writeDescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+					writeDescriptors[0].pBufferInfo = &m_PipeObjects[i]->ModelBuffer->GetBufferInfo();
 
-			std::array<VkWriteDescriptorSet, 3> writeDescriptors{};
-			writeDescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptors[0].dstSet = m_PipeObjects[i]->DescriptorSet;
-			writeDescriptors[0].dstBinding = 0;
-			writeDescriptors[0].descriptorCount = 1;
-			writeDescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			writeDescriptors[0].pBufferInfo = &m_PipeObjects[i]->ModelBuffer->GetBufferInfo();
+					writeDescriptors[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					writeDescriptors[1].dstSet = m_PipeObjects[i]->DescriptorSets[j];
+					writeDescriptors[1].dstBinding = 1;
+					writeDescriptors[1].descriptorCount = 1;
+					writeDescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+					writeDescriptors[1].pBufferInfo = &m_Camera->MatricesBuffer->GetBufferInfo();
 
-			writeDescriptors[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptors[1].dstSet = m_PipeObjects[i]->DescriptorSet;
-			writeDescriptors[1].dstBinding = 1;
-			writeDescriptors[1].descriptorCount = 1;
-			writeDescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			writeDescriptors[1].pBufferInfo = &m_Camera->MatricesBuffer->GetBufferInfo();
+					writeDescriptors[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+					writeDescriptors[2].dstSet = m_PipeObjects[i]->DescriptorSets[j];
+					writeDescriptors[2].dstBinding = 2;
+					writeDescriptors[2].descriptorCount = 1;
+					writeDescriptors[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+					writeDescriptors[2].pImageInfo = &m_PipeObjects[i]->Texture->descriptors[j];
 
-			writeDescriptors[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptors[2].dstSet = m_PipeObjects[i]->DescriptorSet;
-			writeDescriptors[2].dstBinding = 2;
-			writeDescriptors[2].descriptorCount = 1;
-			writeDescriptors[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			writeDescriptors[2].pImageInfo = &m_PipeObjects[i]->Texture->descriptor;
-
-			vkUpdateDescriptorSets(m_Core->GetDevice(), writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+					vkUpdateDescriptorSets(m_Core->GetDevice(), writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+				}
+			}
 		}
 
 		//Descriptor Set for Bird OBJ
 		{
-			VkDescriptorSetAllocateInfo descriptorSetAI = init::descriptorSetAllocateInfo();
-			descriptorSetAI.descriptorPool = m_DescriptorPool;
-			descriptorSetAI.descriptorSetCount = 1;
-			descriptorSetAI.pSetLayouts = &layout.ObjectsDescriptor;
-			VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &descriptorSetAI, &m_Bird->DescriptorSet));
+			for (int j = 0; j < 3; j++)
+			{
+				VkDescriptorSetAllocateInfo descriptorSetAI = init::descriptorSetAllocateInfo();
+				descriptorSetAI.descriptorPool = m_DescriptorPool;
+				descriptorSetAI.descriptorSetCount = 1;
+				descriptorSetAI.pSetLayouts = &layout.ObjectsDescriptor;
+				VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &descriptorSetAI, &m_Bird->DescriptorSets[j]));
 
-			std::array<VkWriteDescriptorSet, 3> writeDescriptors{};
-			writeDescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptors[0].dstSet = m_Bird->DescriptorSet;
-			writeDescriptors[0].dstBinding = 0;
-			writeDescriptors[0].descriptorCount = 1;
-			writeDescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			writeDescriptors[0].pBufferInfo = &m_Bird->ModelBuffer->GetBufferInfo();
+				std::array<VkWriteDescriptorSet, 3> writeDescriptors{};
+				writeDescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptors[0].dstSet = m_Bird->DescriptorSets[j];
+				writeDescriptors[0].dstBinding = 0;
+				writeDescriptors[0].descriptorCount = 1;
+				writeDescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				writeDescriptors[0].pBufferInfo = &m_Bird->ModelBuffer->GetBufferInfo();
 
-			writeDescriptors[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptors[1].dstSet = m_Bird->DescriptorSet;
-			writeDescriptors[1].dstBinding = 1;
-			writeDescriptors[1].descriptorCount = 1;
-			writeDescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			writeDescriptors[1].pBufferInfo = &m_Camera->MatricesBuffer->GetBufferInfo();
+				writeDescriptors[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptors[1].dstSet = m_Bird->DescriptorSets[j];
+				writeDescriptors[1].dstBinding = 1;
+				writeDescriptors[1].descriptorCount = 1;
+				writeDescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				writeDescriptors[1].pBufferInfo = &m_Camera->MatricesBuffer->GetBufferInfo();
 
-			writeDescriptors[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptors[2].dstSet = m_Bird->DescriptorSet;
-			writeDescriptors[2].dstBinding = 2;
-			writeDescriptors[2].descriptorCount = 1;
-			writeDescriptors[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			writeDescriptors[2].pImageInfo = &m_Bird->Texture->descriptor;
+				writeDescriptors[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptors[2].dstSet = m_Bird->DescriptorSets[j];
+				writeDescriptors[2].dstBinding = 2;
+				writeDescriptors[2].descriptorCount = 1;
+				writeDescriptors[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				writeDescriptors[2].pImageInfo = &m_Bird->Texture->descriptors[j];
 
-			vkUpdateDescriptorSets(m_Core->GetDevice(), writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+				vkUpdateDescriptorSets(m_Core->GetDevice(), writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+			}
 		}
 
 		//Descriptor Set for Background
 		{
-			VkDescriptorSetAllocateInfo descriptorSetAI = init::descriptorSetAllocateInfo();
-			descriptorSetAI.descriptorPool = m_DescriptorPool;
-			descriptorSetAI.descriptorSetCount = 1;
-			descriptorSetAI.pSetLayouts = &layout.BackgroundDescriptor;
-			VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &descriptorSetAI, &m_Background->DescriptorSet));
+			for (int j = 0; j < 3; j++)
+			{
+				VkDescriptorSetAllocateInfo descriptorSetAI = init::descriptorSetAllocateInfo();
+				descriptorSetAI.descriptorPool = m_DescriptorPool;
+				descriptorSetAI.descriptorSetCount = 1;
+				descriptorSetAI.pSetLayouts = &layout.BackgroundDescriptor;
+				VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &descriptorSetAI, &m_Background->DescriptorSets[j]));
 
-			std::array<VkWriteDescriptorSet, 2> writeDescriptors{};
-			writeDescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptors[0].dstSet = m_Background->DescriptorSet;
-			writeDescriptors[0].dstBinding = 0;
-			writeDescriptors[0].descriptorCount = 1;
-			writeDescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			writeDescriptors[0].pBufferInfo = &m_Background->ModelBuffer->GetBufferInfo();
+				std::array<VkWriteDescriptorSet, 2> writeDescriptors{};
+				writeDescriptors[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptors[0].dstSet = m_Background->DescriptorSets[j];
+				writeDescriptors[0].dstBinding = 0;
+				writeDescriptors[0].descriptorCount = 1;
+				writeDescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				writeDescriptors[0].pBufferInfo = &m_Background->ModelBuffer->GetBufferInfo();
 
-			writeDescriptors[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptors[1].dstSet = m_Background->DescriptorSet;
-			writeDescriptors[1].dstBinding = 1;
-			writeDescriptors[1].descriptorCount = 1;
-			writeDescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			writeDescriptors[1].pImageInfo = &m_Background->Texture->descriptor;
+				writeDescriptors[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptors[1].dstSet = m_Background->DescriptorSets[j];
+				writeDescriptors[1].dstBinding = 1;
+				writeDescriptors[1].descriptorCount = 1;
+				writeDescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				writeDescriptors[1].pImageInfo = &m_Background->Texture->descriptors[j];
 
-			vkUpdateDescriptorSets(m_Core->GetDevice(), writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+				vkUpdateDescriptorSets(m_Core->GetDevice(), writeDescriptors.size(), writeDescriptors.data(), 0, nullptr);
+			}
 		}
 	}
 
 	void TestFlappyBird::preparePipeline()
 	{
-		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = init::pipelineLayout();
+		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = init::pipelineLayoutCreateInfo();
 		pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
 		pipelineLayoutCreateInfo.setLayoutCount = 1;
 		pipelineLayoutCreateInfo.pSetLayouts = &layout.ObjectsDescriptor;
@@ -446,6 +456,8 @@ namespace test
 
 	void TestFlappyBird::setCmdBuffers()
 	{
+		ImGui::Render();
+
 		VkCommandBufferBeginInfo cmdBufferBI = init::cmdBufferBeginInfo();
 
 		VkClearValue clearValues[2];
@@ -468,16 +480,18 @@ namespace test
 
 			vkCmdBindPipeline(m_Core->resources.drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.Background);
 
-			m_Background->draw(m_Core->resources.drawCmdBuffers[i], layout.BackgroundPipeline);
+			m_Background->draw(m_Core->resources.drawCmdBuffers[i], layout.BackgroundPipeline, i);
 
 			vkCmdBindPipeline(m_Core->resources.drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.PipeObject);
 
 			for(int pipeIndex = 0; pipeIndex < m_PipeObjects.size(); pipeIndex++)
-				m_PipeObjects[pipeIndex]->draw(m_Core->resources.drawCmdBuffers[i], layout.ObjectsPipeline);
+				m_PipeObjects[pipeIndex]->draw(m_Core->resources.drawCmdBuffers[i], layout.ObjectsPipeline, i);
 
 			vkCmdBindPipeline(m_Core->resources.drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.BirdObject);
 
-			m_Bird->draw(m_Core->resources.drawCmdBuffers[i], layout.ObjectsPipeline);
+			m_Bird->draw(m_Core->resources.drawCmdBuffers[i], layout.ObjectsPipeline, i);
+
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_Core->resources.drawCmdBuffers[i]);
 
 			vkCmdEndRenderPass(m_Core->resources.drawCmdBuffers[i]);
 
@@ -510,5 +524,92 @@ namespace test
 
 		preparePipeline();
 		setCmdBuffers();
+	}
+
+	void test::TestFlappyBird::OnGameStart()
+	{
+		//Create PipeObjects!
+		{
+			static std::default_random_engine engine;
+			static std::uniform_real_distribution<float> randomFloat(2.5f, 4.0f);
+			float random = randomFloat(engine);
+
+			for (int i = 0; i < m_PipeObjects.size(); i++)
+			{
+				m_PipeObjects[i] = new PipeObject("assets/textures/flappyBird/pipe.png", m_Core);
+				m_PipeObjects[i]->HeightScale = random;
+
+				m_PipeObjects[i]->worldPosX = ((m_ScreenRight * 2.0f) - ((i / 2) * 2 * m_ScreenRight / m_PipeObjects.size()));
+
+				m_PipeObjects[i]->worldPosY = (i % 2) ? m_ScreenTop : -m_ScreenTop;
+
+				m_PipeObjects[i]->worldScale = (i % 2) ? m_PipeObjects[i]->HeightScale * 2 : (m_ScreenTop * 2) - (m_PipeObjects[i]->HeightScale / 2 + m_PipeGap);
+
+				m_PipeObjects[i]->SetRotation(0.0f, 0.0f, (i % 2) * 180.0f);
+				m_PipeObjects[i]->SetPosition(
+					m_PipeObjects[i]->worldPosX,
+					m_PipeObjects[i]->worldPosY,
+					0.0f);
+				m_PipeObjects[i]->SetScale(1.0f, m_PipeObjects[i]->worldScale, 1.0f);
+
+				if (i % 2 == 1)
+					random = randomFloat(engine);
+			}
+		}
+
+		//Create bird!
+		{
+			m_Bird.reset(new BirdObject(m_Core));
+			m_Bird->SetRotation(0.0f, 180.0f, 0.0f);
+		}
+
+		//Create background!
+		{
+			m_Background.reset(new Background(m_Core));
+			m_Background->SetScale(m_ScreenRight, m_ScreenTop, 1.0f);
+		}
+	}
+
+	void test::TestFlappyBird::OnGameOver(float deltaTime)
+	{
+		gamePaused = true;
+		if (m_Bird->Position.y >= m_ScreenTop)
+			m_Bird->Translate({ 0.0f, 0.5f * deltaTime, 0.0f });
+	}
+
+	void test::TestFlappyBird::OnRestartGame()
+	{
+		m_HighestScore = std::max(m_Score, m_HighestScore);
+		m_Score = 0;
+
+		gamePaused = false;
+
+		m_Bird->SetPosition(-1.0f, 0.0f, 0.0f);
+
+		static std::default_random_engine engine;
+		static std::uniform_real_distribution<float> randomFloat(2.5f, 4.0f);
+		float random = randomFloat(engine);
+
+		for (int i = 0; i < m_PipeObjects.size(); i++)
+		{
+			m_PipeObjects[i]->HeightScale = random;
+
+			m_PipeObjects[i]->worldPosX = ((m_ScreenRight * 2.0f) - ((i / 2) * 1.75f));
+
+			m_PipeObjects[i]->worldPosY = (i % 2) ? m_ScreenTop : -m_ScreenTop;
+
+			m_PipeObjects[i]->SetRotation(0.0f, 0.0f, (i % 2) * 180.0f);
+			m_PipeObjects[i]->SetPosition(
+				m_PipeObjects[i]->worldPosX,
+				m_PipeObjects[i]->worldPosY,
+				0.0f);
+
+			m_PipeObjects[i]->worldScale = (i % 2) ? m_PipeObjects[i]->HeightScale * 2 : (m_ScreenTop * 2) - (m_PipeObjects[i]->HeightScale / 2 + m_PipeGap);
+
+			m_PipeObjects[i]->SetScale(1.0f, m_PipeObjects[i]->worldScale, 1.0f);
+
+			if (i % 2 == 1)
+				random = randomFloat(engine);
+		}
 	}
 }

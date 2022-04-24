@@ -11,8 +11,7 @@ public:
 	PipeObject(const std::string& texturePath, VulkanCore* core);
 
 	virtual ~PipeObject() {};
-
-	void DestroyPipe(float xPos);
+public:
 
 	std::unique_ptr<VulkanTexture2D> Texture;
 

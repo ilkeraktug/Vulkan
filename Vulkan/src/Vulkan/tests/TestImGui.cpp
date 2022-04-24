@@ -1,12 +1,12 @@
 #include "pch.h"
-#include "TestGraphicsPipeline.h"
+#include "TestImGui.h"
 
 namespace test
 {
-	TestGraphicsPipeline::TestGraphicsPipeline(VulkanCore* core)
+	TestImGui::TestImGui(VulkanCore* core)
 	{
 		Test::Init(core);
-		glfwSetWindowTitle(static_cast<GLFWwindow*>(Window::GetWindow()), "TestGraphicsPipeline");
+		glfwSetWindowTitle(static_cast<GLFWwindow*>(Window::GetWindow()), "TestImGui");
 
 		float right = m_Core->swapchain.extent.width / 200.0f;
 		float top = m_Core->swapchain.extent.height / 200.0f;
@@ -14,11 +14,11 @@ namespace test
 
 		float vertices[] =
 		{
-		//   Vertex Positions,		Colors,				Tex Coords
-			-0.5f, -0.5f, 0.0f,		1.0f, 0.0f, 1.0f,	1.0f, 0.0f,
-			 0.5f, -0.5f, 0.0f,		1.0f, 1.0f, 0.0f,	0.0f, 0.0f,
-			 0.5f,  0.5f, 0.0f,		1.0f, 1.0f, 1.0f,	0.0f, 1.0f,
-			-0.5f,  0.5f, 0.0f,		1.0f, 0.0f, 0.0f,	1.0f, 1.0f
+			//   Vertex Positions,		Colors,				Tex Coords
+				-0.5f, -0.5f, 0.0f,		1.0f, 0.0f, 1.0f,	1.0f, 0.0f,
+				 0.5f, -0.5f, 0.0f,		1.0f, 1.0f, 0.0f,	0.0f, 0.0f,
+				 0.5f,  0.5f, 0.0f,		1.0f, 1.0f, 1.0f,	0.0f, 1.0f,
+				-0.5f,  0.5f, 0.0f,		1.0f, 0.0f, 0.0f,	1.0f, 1.0f
 		};
 
 		VertexBufferLayout layout = { {"a_Position", ShaderFormat::Float3},  {"a_Color", ShaderFormat::Float3}, {"a_TexCoords", ShaderFormat::Float2} };
@@ -27,8 +27,7 @@ namespace test
 		m_VertexBuffer->SetLayout(layout);
 
 		uint16_t indices[] =
-		{ 
-		  0, 1, 2,
+		{ 0, 1, 2,
 		  2, 3, 0
 		};
 
@@ -43,11 +42,16 @@ namespace test
 		objs[0]->SetRotation(0.0f, 0.0f, 45.0f);
 		m_Texture.reset(new VulkanTexture2D("assets/textures/face.jpg", m_Core));
 
+		UI = new VulkanUI(core);
+
 		prepareDescriptorPool();
 		preparePipeline();
+
+		UI->OnUpdate();
+		setCmdBuffers();
 	}
 
-	TestGraphicsPipeline::~TestGraphicsPipeline()
+	TestImGui::~TestImGui()
 	{
 		vkDestroyDescriptorSetLayout(m_Core->GetDevice(), m_DescriptorSetLayout, nullptr);
 		vkDestroyDescriptorPool(m_Core->GetDevice(), m_DescriptorPool, nullptr);
@@ -62,41 +66,19 @@ namespace test
 		delete m_Camera;
 	}
 
-	void TestGraphicsPipeline::OnUpdate(float deltaTime)
+	void TestImGui::OnUpdate(float deltaTime)
 	{
-
-		if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_A) == GLFW_PRESS)
-		{
-			m_CameraPosition.x -= m_CameraMoveSpeed * deltaTime;
-		}
-		else if(glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_D) == GLFW_PRESS)
-		{
-			m_CameraPosition.x += m_CameraMoveSpeed * deltaTime;
-		}
-
-		if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_W) == GLFW_PRESS)
-		{
-			m_CameraPosition.y += m_CameraMoveSpeed * deltaTime;
-		}
-		else if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_S) == GLFW_PRESS)
-		{
-			m_CameraPosition.y -= m_CameraMoveSpeed * deltaTime;
-		}
-
-		m_Camera->SetPosition(m_CameraPosition);
-
-		objs[0]->Rotate(90.0f * deltaTime, { 0.0f, 0.0f, 1.0f }, Space::Local);
-
 		updateUniformBuffers();
 	}
 
-	void TestGraphicsPipeline::OnRender()
+	void TestImGui::OnRender()
 	{
 		m_Core->BeginScene();
 
 		m_Core->resources.submitInfo.commandBufferCount = 1;
 		m_Core->resources.submitInfo.pCommandBuffers = &m_Core->resources.drawCmdBuffers[m_Core->resources.imageIndex];
 
+		setCmdBuffers();
 		VK_CHECK(vkQueueSubmit(m_Core->queue.GraphicsQueue, 1, &m_Core->resources.submitInfo, VK_NULL_HANDLE));
 
 		VkResult err = m_Core->Submit();
@@ -111,11 +93,24 @@ namespace test
 		vkDeviceWaitIdle(m_Core->GetDevice());
 	}
 
-	void TestGraphicsPipeline::OnImGuiRender()
+	void TestImGui::OnImGuiRender()
 	{
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+
+		ImGui::NewFrame();
+
+		ImGui::Text("Fps : %f", ImGui::GetIO().Framerate);
+
+		//ImGui::EndFrame();
+		//ImGui::PopStyleVar();
+		ImGui::Render();
+
+		UI->OnUpdate();
+
 	}
 
-	void TestGraphicsPipeline::prepareDescriptorPool()
+	void TestImGui::prepareDescriptorPool()
 	{
 		std::vector<VkDescriptorSetLayoutBinding> layoutBindings =
 		{
@@ -188,7 +183,7 @@ namespace test
 		}
 	}
 
-	void TestGraphicsPipeline::preparePipeline()
+	void TestImGui::preparePipeline()
 	{
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = init::pipelineLayoutCreateInfo();
 		pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
@@ -198,7 +193,7 @@ namespace test
 		VK_CHECK(vkCreatePipelineLayout(m_Core->GetDevice(), &pipelineLayoutCreateInfo, nullptr, &m_PipelineLayout));
 
 		VkPipelineVertexInputStateCreateInfo vertexInputState = init::pipelineVertexInputState();
-		vertexInputState.vertexBindingDescriptionCount   = 1;
+		vertexInputState.vertexBindingDescriptionCount = 1;
 		vertexInputState.pVertexBindingDescriptions = &m_VertexBuffer->GetVertexInput();
 		vertexInputState.vertexAttributeDescriptionCount = m_VertexBuffer->GetVertexAttributes().size();
 		vertexInputState.pVertexAttributeDescriptions = m_VertexBuffer->GetVertexAttributes().data();
@@ -229,7 +224,7 @@ namespace test
 		blendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 		blendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 		blendAttachment.colorWriteMask = 0xF;
-			//VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		//VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
 		VkPipelineColorBlendStateCreateInfo blendState = init::pipelineColorBlendState();
 		blendState.logicOpEnable = VK_FALSE;
@@ -242,7 +237,7 @@ namespace test
 		depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
 		depthStencilState.stencilTestEnable = VK_FALSE;
 
-		VkViewport viewPort{0, 0, m_Core->swapchain.extent.width, m_Core->swapchain.extent.height, 0.0f, 1.0f};
+		VkViewport viewPort{ 0, 0, m_Core->swapchain.extent.width, m_Core->swapchain.extent.height, 0.0f, 1.0f };
 
 		VkRect2D scissor;
 		scissor.offset = { 0, 0 };
@@ -284,7 +279,7 @@ namespace test
 
 	}
 
-	void TestGraphicsPipeline::setCmdBuffers()
+	void TestImGui::setCmdBuffers()
 	{
 		VkCommandBufferBeginInfo cmdBufferBI = init::cmdBufferBeginInfo();
 
@@ -306,6 +301,8 @@ namespace test
 			renderPassBI.framebuffer = m_Core->resources.frameBuffers[i];
 			vkCmdBeginRenderPass(m_Core->resources.drawCmdBuffers[i], &renderPassBI, VK_SUBPASS_CONTENTS_INLINE);
 
+			UI->draw(m_Core->resources.drawCmdBuffers[i]);
+
 			vkCmdBindPipeline(m_Core->resources.drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
 
 			/*for(int k = 0; k < objs.size(); k++)
@@ -319,12 +316,12 @@ namespace test
 		}
 
 	}
-	void TestGraphicsPipeline::updateUniformBuffers()
+	void TestImGui::updateUniformBuffers()
 	{
 
 	}
 
-	void TestGraphicsPipeline::windowResized()
+	void TestImGui::windowResized()
 	{
 		m_Core->windowResized();
 

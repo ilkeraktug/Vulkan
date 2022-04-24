@@ -29,6 +29,8 @@ static VkFormat GetVkFormat(ShaderFormat shadarFormat)
 	case ShaderFormat::Float3:	return VK_FORMAT_R32G32B32_SFLOAT;
 	case ShaderFormat::Float4:	return VK_FORMAT_R32G32B32A32_SFLOAT;
 	}
+
+	return VK_FORMAT_UNDEFINED;
 }
 
 static uint32_t GetFormatSize(ShaderFormat shadarFormat)
@@ -46,6 +48,8 @@ static uint32_t GetFormatSize(ShaderFormat shadarFormat)
 	case ShaderFormat::Mat3x3:	return 4 * 3 * 3;
 	case ShaderFormat::Mat4x4:	return 4 * 4 * 4;
 	}
+
+	return 0;
 }
 
 struct Element

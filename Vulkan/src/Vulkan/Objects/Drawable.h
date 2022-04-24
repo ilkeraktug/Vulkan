@@ -22,7 +22,7 @@ public:
 
 	virtual void OnUpdate(float deltaTime) {};
 
-	virtual void draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout);
+	virtual void draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int i);
 	
 	virtual void SetPosition(glm::vec3 position);
 	virtual void SetPosition(float* position);
@@ -42,8 +42,11 @@ public:
 	virtual void Translate(glm::vec3 position);
 	virtual void Rotate(float angle, glm::vec3 axis = glm::vec3(0.0f, 0.0f, 1.0f), Space space = Space::Local);
 
+	virtual bool CheckCollision(const Drawable& other, float screenTop);
+
+public:
 	std::unique_ptr<VulkanUniformBuffer> ModelBuffer;
-	VkDescriptorSet DescriptorSet;
+	VkDescriptorSet DescriptorSets[3];
 
 	glm::vec3 Position = glm::vec3(0.0f);
 	glm::vec3 Scale    = glm::vec3(1.0f);

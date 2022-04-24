@@ -90,6 +90,7 @@ void VulkanVertexBuffer::createBuffer(float* vertices)
 
 	VK_CHECK(vkQueueSubmit(m_Core->queue.GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
 	vkQueueWaitIdle(m_Core->queue.GraphicsQueue);
+	vkDeviceWaitIdle(m_Core->GetDevice());
 
 	vkDestroyBuffer(m_Core->GetDevice(), stageBuffer, nullptr);
 	vkFreeMemory(m_Core->GetDevice(), stageBufferMemory, nullptr);

@@ -5,6 +5,20 @@
 
 namespace init 
 {
+	inline VkRenderPassCreateInfo renderPassCreateInfo()
+	{
+		VkRenderPassCreateInfo renderPassCI{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+
+		return renderPassCI;
+	}		
+	
+	inline VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo()
+	{
+		VkGraphicsPipelineCreateInfo graphicsPipelineCI{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
+
+		return graphicsPipelineCI;
+	}	
+	
 	inline VkCommandPoolCreateInfo commandPoolCreateInfo()
 	{
 		VkCommandPoolCreateInfo commandPoolCI{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
@@ -61,7 +75,7 @@ namespace init
 		return presentInfo;
 	}	
 		
-	inline VkPipelineLayoutCreateInfo pipelineLayout()
+	inline VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo()
 	{
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 		return pipelineLayoutCreateInfo;

@@ -135,6 +135,128 @@ VulkanTexture2D::VulkanTexture2D(const std::string& filepath, VulkanCore* core)
 	updateDescriptor();
 }
 
+VulkanTexture2D::VulkanTexture2D(void* data, uint32_t width, uint32_t height, VulkanCore* core)
+{
+	Init(core);
+	m_Width = width;
+	m_Height = height;
+
+	m_Size = m_Width * m_Height * 4 * sizeof(char);
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stageBufferMemory;
+
+	VkBufferCreateInfo stageBufferCI = init::createBufferInfo(m_Size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+	stageBufferCI.size = m_Size;
+	stageBufferCI.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	stageBufferCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	VK_CHECK(vkCreateBuffer(m_Core->GetDevice(), &stageBufferCI, nullptr, &stagingBuffer));
+
+	VkMemoryRequirements memReq;
+	vkGetBufferMemoryRequirements(m_Core->GetDevice(), stagingBuffer, &memReq);
+
+	VkMemoryAllocateInfo memAllocInfo = init::memAllocInfo();
+	memAllocInfo.allocationSize = memReq.size;
+	memAllocInfo.memoryTypeIndex = m_Core->getMemoryType(memReq.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+	VK_CHECK(vkAllocateMemory(m_Core->GetDevice(), &memAllocInfo, nullptr, &stageBufferMemory));
+
+	VK_CHECK(vkBindBufferMemory(m_Core->GetDevice(), stagingBuffer, stageBufferMemory, 0));
+
+	void* memData;
+	VK_CHECK(vkMapMemory(m_Core->GetDevice(), stageBufferMemory, 0, m_Size, 0, &memData));
+	memcpy(memData, data, m_Size);
+	vkUnmapMemory(m_Core->GetDevice(), stageBufferMemory);
+
+	VkImageCreateInfo imageCI = init::imageCreateInfo();
+	imageCI.imageType = VK_IMAGE_TYPE_2D;
+	imageCI.format = m_Format;
+	imageCI.extent = { m_Width, m_Height, 1 };
+	imageCI.mipLevels = 1;
+	imageCI.arrayLayers = 1;
+	imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCI.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+	VK_CHECK(vkCreateImage(m_Core->GetDevice(), &imageCI, nullptr, &m_Image));
+
+	vkGetImageMemoryRequirements(m_Core->GetDevice(), m_Image, &memReq);
+	memAllocInfo.allocationSize = memReq.size;
+	memAllocInfo.memoryTypeIndex = m_Core->getMemoryType(memReq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	VK_CHECK(vkAllocateMemory(m_Core->GetDevice(), &memAllocInfo, nullptr, &m_ImageMemory));
+	VK_CHECK(vkBindImageMemory(m_Core->GetDevice(), m_Image, m_ImageMemory, 0));
+
+	VkCommandBuffer copyCommandBuffer = m_Core->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+	VkImageSubresourceRange imageSubresource{};
+	imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageSubresource.baseMipLevel = 0;
+	imageSubresource.levelCount = 1;
+	imageSubresource.baseArrayLayer = 0;
+	imageSubresource.layerCount = 1;
+
+	VkImageMemoryBarrier imageMemoryBarrier = init::imageMemoryBarrier();
+	imageMemoryBarrier.srcAccessMask = 0;
+	imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imageMemoryBarrier.image = m_Image;
+	imageMemoryBarrier.subresourceRange = imageSubresource;
+
+	vkCmdPipelineBarrier(copyCommandBuffer,
+		VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &imageMemoryBarrier);
+
+	VkBufferImageCopy bufferCopyRegion{};
+	bufferCopyRegion.bufferOffset = 0;
+	bufferCopyRegion.imageExtent = { m_Width, m_Height, 1 };
+	bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
+	bufferCopyRegion.imageSubresource.layerCount = 1;
+	bufferCopyRegion.imageSubresource.mipLevel = 0;
+
+	vkCmdCopyBufferToImage(copyCommandBuffer,
+		stagingBuffer, m_Image,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1, &bufferCopyRegion);
+
+	imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+	vkCmdPipelineBarrier(copyCommandBuffer,
+		VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &imageMemoryBarrier);
+
+	VK_CHECK(vkEndCommandBuffer(copyCommandBuffer));
+
+	VkSubmitInfo submitInfo = init::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &copyCommandBuffer;
+
+	VK_CHECK(vkQueueSubmit(m_Core->queue.GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
+	vkQueueWaitIdle(m_Core->queue.GraphicsQueue);
+
+	vkDestroyBuffer(m_Core->GetDevice(), stagingBuffer, nullptr);
+	vkFreeMemory(m_Core->GetDevice(), stageBufferMemory, nullptr);
+	vkFreeCommandBuffers(m_Core->GetDevice(), m_Core->resources.commandPool, 1, &copyCommandBuffer);
+
+	createImageView();
+	createImageSampler();
+	updateDescriptor();
+}
+
 VulkanTexture2D::~VulkanTexture2D()
 {
 }

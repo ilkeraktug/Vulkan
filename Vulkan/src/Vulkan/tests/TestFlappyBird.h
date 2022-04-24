@@ -36,6 +36,10 @@ namespace test {
 
 	private:
 
+		void OnGameStart();
+		void OnGameOver(float deltaTime);
+		void OnRestartGame();
+
 		void prepareDescriptorPool();
 		void preparePipeline();
 		void setCmdBuffers();
@@ -44,24 +48,23 @@ namespace test {
 		virtual void windowResized() override;
 
 	private:
-		VkDescriptorPool m_DescriptorPool;
 
 		Camera* m_Camera;
 
 		float m_ScreenRight;
 		float m_ScreenTop;
 
+		bool gamePaused = true;
+
+		uint16_t m_Score = 0;
+		uint16_t m_HighestScore = 0;
+
 		std::array<PipeObject*, 16> m_PipeObjects;
 		float m_PipeGap = 0.5f;
-
-		bool gamePaused = false;
-
-		bool firstTime = true;
-
-		int gap_position[10] = { 3, 1, 4, 1, 5, 9, 2, 6, 5, 3 };
-
 		std::unique_ptr<BirdObject> m_Bird;
 		std::unique_ptr<Background> m_Background;
+
+		VkDescriptorPool m_DescriptorPool;
 
 		struct
 		{

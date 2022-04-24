@@ -17,16 +17,19 @@ public:
 
 	void Init(VulkanCore* core) { m_Core = core; }
 
-	VkDescriptorImageInfo descriptor;
+	VkDescriptorImageInfo descriptors[3];
 protected:
 	virtual void createImageView() = 0;
 	virtual void createImageSampler() = 0;
 
 	void updateDescriptor()
 	{
-		descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		descriptor.imageView = m_ImageView;
-		descriptor.sampler = m_ImageSampler;
+		for (int i = 0; i < 3; i++)
+		{
+			descriptors[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			descriptors[i].imageView = m_ImageView;
+			descriptors[i].sampler = m_ImageSampler;
+		}
 	}
 protected:
 

@@ -1,9 +1,3 @@
-﻿/*
-*
-* This test is meant for Textures.
-*
-*/
-
 #pragma once
 
 #include <glm/glm.hpp>
@@ -17,22 +11,25 @@
 #include "Vulkan/Renderer/VulkanUniformBuffer.h"
 #include "Vulkan/Renderer/VulkanTexture2D.h"
 
+#include "Vulkan/ImGui/VulkanUI.h"
+
 #include "Vulkan/Renderer/OrthographicCamera.h"
 #include "Vulkan/Renderer/PerspectiveCamera.h"
 
 #include "Vulkan/Objects/QuadObj.h"
 #include "Vulkan/Objects/CubeObj.h"
 
-#include "Vulkan/ImGui/VulkanUI.h"
+//
+#include "Vulkan/tests/FlappyBird/PipeObject.h"
 
 namespace test
 {
-	class TestGraphicsPipeline : public Test
+	class TestImGui : public Test
 	{
 	public:
-		TestGraphicsPipeline() = default;
-		TestGraphicsPipeline(VulkanCore* core);
-		~TestGraphicsPipeline();
+		TestImGui() = default;
+		TestImGui(VulkanCore* core);
+		~TestImGui();
 
 		virtual void OnUpdate(float deltaTime) override;
 		virtual void OnRender() override;
@@ -66,5 +63,6 @@ namespace test
 
 		std::array<Drawable*, 1> objs;
 
+		VulkanUI* UI;
 	};
 }

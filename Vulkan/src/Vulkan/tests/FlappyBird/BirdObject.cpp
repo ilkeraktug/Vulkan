@@ -7,6 +7,7 @@ BirdObject::BirdObject(VulkanCore* core)
 	Texture.reset(new VulkanTexture2D("assets/textures/flappyBird/bird.png", core));
 
 	SetScale(0.5);
+	SetPosition(-5.0f);
 }
 
 BirdObject::~BirdObject()

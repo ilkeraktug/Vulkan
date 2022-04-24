@@ -12,6 +12,8 @@
 
 #include "tests/TestGraphicsPipeline.h"
 #include "tests/TestFlappyBird.h"
+#include "tests/TestImGui.h"
+#include "tests/TestShadowMapping.h"
 
 Application::Application()
 {
@@ -26,6 +28,8 @@ Application::Application()
 
     //m_CurrentTest = new test::TestGraphicsPipeline(m_VulkanCore.get());
     m_CurrentTest = new test::TestFlappyBird(m_VulkanCore.get());
+    //m_CurrentTest = new test::TestImGui(m_VulkanCore.get());
+    //m_CurrentTest = new test::TestShadowMapping(m_VulkanCore.get());
     m_TestMenu = new test::TestMenu(m_CurrentTest);
 }
 
@@ -52,13 +56,8 @@ void Application::Run()
             m_CurrentTest->OnImGuiRender();
 
             m_CurrentTest->OnRender();
-
-
-           /* ImGui_ImplVulkan_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-
-            ImGui::Begin("Select one of tests");
+            
+            /*ImGui::Begin("Select one of tests");
             if (m_CurrentTest != m_TestMenu && ImGui::Button("<--"))
             {
                 delete m_CurrentTest;

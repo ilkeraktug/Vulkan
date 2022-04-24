@@ -4,6 +4,8 @@
 
 #include "VulkanCore.h"
 
+#define UNIFORM_BUFFER_COPY_DATA(object, data) object->copyData(&data, sizeof(data))
+
 class VulkanUniformBuffer : public Buffer
 {
 public:
@@ -19,8 +21,6 @@ public:
 
 	VkDescriptorBufferInfo GetBufferInfo() { return m_BufferInfo; }
 	const VkDescriptorBufferInfo& GetBufferInfo() const { return m_BufferInfo; }
-public:
-
 private:
 	void createBuffer();
 	void setBufferInfo();
