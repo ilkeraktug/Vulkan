@@ -17,6 +17,9 @@
 
 Application::Application()
 {
+    //TODO : Test Menu
+    m_TestMenu = nullptr;
+
     Log::Init();
     VK_CORE_INFO("Application created!");
 
