@@ -20,7 +20,8 @@ void Drawable::draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayo
 void Drawable::SetPosition(glm::vec3 position)
 {
 	Position = position;
-	Position.y *= -1;
+	// The coordinates of OpenGL and Vulkan API are opposite to each other. glm library meant to use on OpenGL applications.Hence, Y axis is mirrored by X axis.
+	Position.y *= -1.0f;
 
 	m_PositionMatrix = glm::translate(glm::mat4(1.0f), Position);
 
@@ -34,7 +35,8 @@ void Drawable::SetPosition(float* position)
 	Position.y = position[1];
 	Position.z = position[2];
 
-	Position.y *= -1;
+	// The coordinates of OpenGL and Vulkan API are opposite to each other. glm library meant to use on OpenGL applications.Hence, Y axis is mirrored by X axis.
+	Position.y *= -1.0f;
 
 	m_PositionMatrix = glm::translate(glm::mat4(1.0f), Position);
 
@@ -48,6 +50,7 @@ void Drawable::SetPosition(float x, float y, float z)
 	Position.y = y;
 	Position.z = z;
 
+	// The coordinates of OpenGL and Vulkan API are opposite to each other. glm library meant to use on OpenGL applications.Hence, Y axis is mirrored by X axis.
 	Position.y *= -1;
 
 	m_PositionMatrix = glm::translate(glm::mat4(1.0f), Position);
@@ -62,6 +65,7 @@ void Drawable::SetPosition(float xyz)
 	Position.y = xyz;
 	Position.z = xyz;
 
+	// The coordinates of OpenGL and Vulkan API are opposite to each other. glm library meant to use on OpenGL applications.Hence, Y axis is mirrored by X axis.
 	Position.y *= -1;
 
 	m_PositionMatrix = glm::translate(glm::mat4(1.0f), Position);

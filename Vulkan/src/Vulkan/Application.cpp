@@ -26,20 +26,22 @@ Application::Application()
 
     m_VulkanCore.reset(new VulkanCore(enableExtension));
 
-    //m_CurrentTest = new test::TestGraphicsPipeline(m_VulkanCore.get());
     m_CurrentTest = new test::TestFlappyBird(m_VulkanCore.get());
-    //m_CurrentTest = new test::TestImGui(m_VulkanCore.get());
-    //m_CurrentTest = new test::TestShadowMapping(m_VulkanCore.get());
-    m_TestMenu = new test::TestMenu(m_CurrentTest);
 }
 
 Application::~Application()
 {
     glfwTerminate();
 
+    if (m_TestMenu)
+    {
+        delete m_TestMenu;
+    }
 
-    delete m_TestMenu;
-    delete m_CurrentTest;
+    if (m_CurrentTest)
+    {
+        delete m_CurrentTest;
+    }
 }
 
 void Application::Run()
@@ -56,18 +58,6 @@ void Application::Run()
             m_CurrentTest->OnImGuiRender();
 
             m_CurrentTest->OnRender();
-            
-            /*ImGui::Begin("Select one of tests");
-            if (m_CurrentTest != m_TestMenu && ImGui::Button("<--"))
-            {
-                delete m_CurrentTest;
-                m_CurrentTest = m_TestMenu;
-            }
-
-            ImGui::End();
-
-            m_CurrentTest->OnImGuiRender();*/
-
         }
     }
 }
