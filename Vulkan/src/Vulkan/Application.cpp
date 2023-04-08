@@ -29,7 +29,11 @@ Application::Application()
 
     m_VulkanCore.reset(new VulkanCore(enableExtension));
 
-    m_CurrentTest = new test::TestFlappyBird(m_VulkanCore.get());
+    m_CurrentTest = new test::TestShadowMapping(m_VulkanCore.get());
+    
+   //m_TestMenu = new test::TestMenu(m_CurrentTest);
+   //m_TestMenu->PushMenu<test::TestFlappyBird>("TestFlappyBird");
+   //m_TestMenu->PushMenu<test::TestGraphicsPipeline>("TestGraphicsPipeline");
 }
 
 Application::~Application()
@@ -55,6 +59,11 @@ void Application::Run()
 
         m_Window->OnUpdate();
 
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+
+        ImGui::NewFrame();
+		
         if (m_CurrentTest)
         {
             m_CurrentTest->OnUpdate(Time::deltaTime);
@@ -62,5 +71,7 @@ void Application::Run()
 
             m_CurrentTest->OnRender();
         }
+        
+        ImGui::EndFrame();
     }
 }

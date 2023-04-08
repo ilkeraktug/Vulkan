@@ -32,7 +32,10 @@ namespace test {
 		template<typename T>
 		void PushMenu(const std::string& name)
 		{
-			m_Tests.push_back(std::make_pair(name, []() { return new T(m_Core)}));
+			m_Tests.push_back(std::make_pair(name, [this]()
+			{
+				return new T(m_Core);
+			}));
 		}
 
 		virtual void OnUpdate(float deltaTime) override;
@@ -41,6 +44,8 @@ namespace test {
 
 	private:
 		Test*& m_CurrentTest;
-		std::vector<std::pair<std::string, std::function<Test* (VulkanCore& core)>>> m_Tests;
+		std::vector<std::pair<std::string, std::function<Test*()>>> m_Tests;
+
+		bool isOpen = true;
 	};
 }

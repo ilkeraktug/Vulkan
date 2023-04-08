@@ -147,10 +147,10 @@ namespace test
 
 	void TestFlappyBird::OnImGuiRender()
 	{
-		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-
-		ImGui::NewFrame();
+		//ImGui_ImplVulkan_NewFrame();
+		//ImGui_ImplGlfw_NewFrame();
+//
+		//ImGui::NewFrame();
 	
 		if (gamePaused )
 		{

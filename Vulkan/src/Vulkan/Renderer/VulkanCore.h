@@ -81,8 +81,8 @@ public:
 		uint32_t imageIndex;
 
 	}resources;
+	
 	struct
-
 	{
 		VkImage image;
 		VkImageView view;

@@ -883,6 +883,8 @@ void VulkanCore::createDebugMessenger()
 	VK_CHECK(vkCreateDebugUtilsMessenger(m_Instance, &debugUtilsCreateInfo, nullptr, &m_DebugMessenger));
 }
 
+#endif //ENABLE_VALIDATION_LAYERS
+
 void VulkanCore::windowResized()
 {
 	vkQueueWaitIdle(queue.GraphicsQueue);
@@ -915,6 +917,3 @@ void VulkanCore::windowResized()
 	createRenderPass();
 	createFrameBuffer();
 }
-
-
-#endif //ENABLE_VALIDATION_LAYERS

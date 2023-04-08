@@ -56,7 +56,7 @@ namespace test
 		void updateLight();
 		void updateUniformBuffers();
 		void updateUniformBuffersLight();
-
+		
 		virtual void windowResized() override;
 
 	private:
