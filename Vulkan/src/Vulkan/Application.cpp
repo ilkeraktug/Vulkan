@@ -13,6 +13,7 @@
 #include "tests/TestGraphicsPipeline.h"
 #include "tests/TestFlappyBird.h"
 #include "tests/TestImGui.h"
+#include "tests/TestShadow.h"
 #include "tests/TestShadowMapping.h"
 
 Application::Application()
@@ -29,7 +30,7 @@ Application::Application()
 
     m_VulkanCore.reset(new VulkanCore(enableExtension));
 
-    m_CurrentTest = new test::TestShadowMapping(m_VulkanCore.get());
+    m_CurrentTest = new test::TestShadow(m_VulkanCore.get());
     
    //m_TestMenu = new test::TestMenu(m_CurrentTest);
    //m_TestMenu->PushMenu<test::TestFlappyBird>("TestFlappyBird");
