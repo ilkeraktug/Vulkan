@@ -477,7 +477,7 @@ namespace test
 		pipelineCI.pColorBlendState = &colorBlendStateCI;
 		pipelineCI.pDynamicState = &dynamicStateCI;
 
-		rasterizationStateCI.cullMode = VK_CULL_MODE_BACK_BIT;
+		rasterizationStateCI.cullMode = VK_CULL_MODE_FRONT_BIT;
 		shaderStages[0] = VulkanShader::GetShaderModule(m_Core->GetDevice(), "assets/shaders/shadowmapping/quad.vspv", VK_SHADER_STAGE_VERTEX_BIT);
 		shaderStages[1] = VulkanShader::GetShaderModule(m_Core->GetDevice(), "assets/shaders/shadowmapping/quad.fspv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -496,7 +496,7 @@ namespace test
 
 	
 		pipelineCI.pVertexInputState = &vertexInputState;
-		rasterizationStateCI.cullMode = VK_CULL_MODE_BACK_BIT;
+		rasterizationStateCI.cullMode = VK_CULL_MODE_FRONT_AND_BACK;
 		shaderStages[0] = VulkanShader::GetShaderModule(m_Core->GetDevice(), "assets/shaders/shadowmapping/scene.vspv", VK_SHADER_STAGE_VERTEX_BIT);
 		shaderStages[1] = VulkanShader::GetShaderModule(m_Core->GetDevice(), "assets/shaders/shadowmapping/scene.fspv", VK_SHADER_STAGE_FRAGMENT_BIT);
 		// Use specialization constants to select between horizontal and vertical blur
