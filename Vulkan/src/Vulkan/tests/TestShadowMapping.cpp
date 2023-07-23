@@ -481,8 +481,8 @@ namespace test {
 
 	void TestShadowMapping::updateUniformBuffers()
 	{
-		sceneUBO.projection = m_Camera->GetProjectionMatrix();
-		sceneUBO.view = m_Camera->GetViewMatrix();
+		sceneUBO.projection = m_Camera->getProjectionMatrix();
+		sceneUBO.view = m_Camera->getViewMatrix();
 		sceneUBO.model = glm::mat4(1.0f);
 		sceneUBO.lightPos = lightPos;
 		sceneUBO.depthBiasMVP = lightUBO.depthMVP;

@@ -23,6 +23,7 @@ public:
 	virtual void OnUpdate(float deltaTime) {};
 
 	virtual void draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, int i);
+	virtual void draw(VkCommandBuffer commandBuffer);
 	
 	virtual void SetPosition(glm::vec3 position);
 	virtual void SetPosition(float* position);

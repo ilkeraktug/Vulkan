@@ -17,6 +17,15 @@ void Drawable::draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayo
 	vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetCount(), 1, 0, 0, 0);
 }
 
+void Drawable::draw(VkCommandBuffer commandBuffer)
+{
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &VertexBuffer->GetBuffer(), offsets);
+	vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetBuffer(), 0, m_IndexBuffer->GetIndexType());
+
+	vkCmdDrawIndexed(commandBuffer, m_IndexBuffer->GetCount(), 1, 0, 0, 0);
+}
+
 void Drawable::SetPosition(glm::vec3 position)
 {
 	Position = position;

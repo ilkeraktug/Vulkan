@@ -17,7 +17,8 @@ public:
 	void SetLayout(const VertexBufferLayout& layout) { m_Layout = layout; CalculateAttributes(); }
 
 	const VkBuffer& GetBuffer() const { return m_Buffer; }
-	const VkVertexInputBindingDescription GetVertexInput() const { return m_VertexBinding; };
+	const VkVertexInputBindingDescription GetVertexInput() const { return m_VertexBinding; }
+	const VkVertexInputBindingDescription& GetVertexInputRef() const { return m_VertexBinding; }
 	const std::vector<VkVertexInputAttributeDescription>& GetVertexAttributes() const { return m_VertexAttributes; };
 private:
 

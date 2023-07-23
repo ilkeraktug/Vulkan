@@ -20,7 +20,7 @@ public:
 	const VkBuffer& GetBuffer() const { return m_Buffer; }
 
 	VkDescriptorBufferInfo GetBufferInfo() { return m_BufferInfo; }
-	const VkDescriptorBufferInfo& GetBufferInfo() const { return m_BufferInfo; }
+	const VkDescriptorBufferInfo& GetBufferInfoRef() const { return m_BufferInfo; }
 private:
 	void createBuffer();
 	void setBufferInfo();

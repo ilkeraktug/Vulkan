@@ -16,7 +16,6 @@ public:
 	float GetRotation() const { return m_Rotation; }
 
 private:
-	virtual void RecalculateViewMatrix() override;
 	void RecalculateProjectionMatrix(float left, float right, float bottom, float top);
 private:
 

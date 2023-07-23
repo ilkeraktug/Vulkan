@@ -16,3 +16,5 @@
 #define VK_CHECK(x) x
 #define VK_CORE_CHECK(x, ...) x
 #endif //ENABLE_ASSERT
+
+#define NEW_LINE_CMD &
