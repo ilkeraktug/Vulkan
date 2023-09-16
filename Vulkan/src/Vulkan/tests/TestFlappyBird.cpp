@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "TestFlappyBird.h"
 
+#include "Vulkan/Renderer/OrthographicCamera.h"
+
 namespace test
 {
 	TestFlappyBird::TestFlappyBird(VulkanCore* core)
@@ -147,10 +149,10 @@ namespace test
 
 	void TestFlappyBird::OnImGuiRender()
 	{
-		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-
-		ImGui::NewFrame();
+		//ImGui_ImplVulkan_NewFrame();
+		//ImGui_ImplGlfw_NewFrame();
+//
+		//ImGui::NewFrame();
 	
 		if (gamePaused )
 		{
@@ -502,7 +504,7 @@ namespace test
 
 	void TestFlappyBird::updateUniformBuffers()
 	{
-		glm::mat4 backgroundMatrix = m_Camera->GetProjectionMatrix() * glm::mat4(glm::mat3(m_Camera->GetViewMatrix())) * m_Background->GetModelMatrix();
+		glm::mat4 backgroundMatrix = m_Camera->getProjectionMatrix() * glm::mat4(glm::mat3(m_Camera->getViewMatrix())) * m_Background->GetModelMatrix();
 		m_Background->ModelBuffer->copyData(&backgroundMatrix, sizeof(glm::mat4));
 	}
 

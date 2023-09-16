@@ -4,6 +4,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "VulkanBuffer.h"
 
 VulkanCore::VulkanCore()
 {
@@ -208,6 +209,142 @@ VkCommandBuffer VulkanCore::createCopyCommandBuffer(VkCommandBufferLevel level, 
 	}
 
 	return cmdBuffer;
+}
+
+void VulkanCore::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, VkCommandPool pool, bool free)
+{
+	if (commandBuffer == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+	VK_CHECK(vkEndCommandBuffer(commandBuffer));
+
+	VkSubmitInfo submitInfo = init::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+	// Create fence to ensure that the command buffer has finished executing
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FLAGS_NONE;
+	VkFence fence;
+	VK_CHECK(vkCreateFence(GetDevice(), &fenceInfo, nullptr, &fence));
+	// Submit to the queue
+	VK_CHECK(vkQueueSubmit(queue, 1, &submitInfo, fence));
+	// Wait for the fence to signal that command buffer has finished executing
+	VK_CHECK(vkWaitForFences(GetDevice(), 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
+	vkDestroyFence(GetDevice(), fence, nullptr);
+	if (free)
+	{
+		vkFreeCommandBuffers(GetDevice(), pool, 1, &commandBuffer);
+	}
+}
+
+void VulkanCore::flushCopyCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
+{
+	return flushCommandBuffer(commandBuffer, queue, resources.copyCommandPool, free);
+}
+
+void VulkanCore::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
+{
+	return flushCommandBuffer(commandBuffer, queue, resources.commandPool, free);
+}
+
+VkResult VulkanCore::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags,
+	VkDeviceSize size, VkBuffer* buffer, VkDeviceMemory* memory, void* data)
+{
+	// Create the buffer handle
+		VkBufferCreateInfo bufferCreateInfo = init::createBufferInfo(size, usageFlags);
+		bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		VK_CHECK(vkCreateBuffer(GetDevice(), &bufferCreateInfo, nullptr, buffer));
+
+		// Create the memory backing up the buffer handle
+		VkMemoryRequirements memReqs;
+		VkMemoryAllocateInfo memAlloc = init::memAllocInfo();
+		vkGetBufferMemoryRequirements(GetDevice(), *buffer, &memReqs);
+		memAlloc.allocationSize = memReqs.size;
+		// Find a memory type index that fits the properties of the buffer
+		memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
+		// If the buffer has VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT set we also need to enable the appropriate flag during allocation
+		VkMemoryAllocateFlagsInfoKHR allocFlagsInfo{};
+		if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+			allocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO_KHR;
+			allocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+			memAlloc.pNext = &allocFlagsInfo;
+		}
+		VK_CHECK(vkAllocateMemory(GetDevice(), &memAlloc, nullptr, memory));
+			
+		// If a pointer to the buffer data has been passed, map the buffer and copy over the data
+		if (data != nullptr)
+		{
+			void *mapped;
+			VK_CHECK(vkMapMemory(GetDevice(), *memory, 0, size, 0, &mapped));
+			memcpy(mapped, data, size);
+			// If host coherency hasn't been requested, do a manual flush to make writes visible
+			if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
+			{
+				VkMappedMemoryRange mappedRange{};
+				mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+				mappedRange.memory = *memory;
+				mappedRange.offset = 0;
+				mappedRange.size = size;
+				vkFlushMappedMemoryRanges(GetDevice(), 1, &mappedRange);
+			}
+			vkUnmapMemory(GetDevice(), *memory);
+		}
+
+		// Attach the memory to the buffer object
+		VK_CHECK(vkBindBufferMemory(GetDevice(), *buffer, *memory, 0));
+
+		return VK_SUCCESS;
+}
+
+VkResult VulkanCore::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags,
+                                  VulkanBuffer* buffer, VkDeviceSize size, void* data)
+{
+	buffer->device = GetDevice();
+
+	// Create the buffer handle
+	VkBufferCreateInfo bufferCreateInfo = init::createBufferInfo(usageFlags, size);
+	VK_CHECK(vkCreateBuffer(GetDevice(), &bufferCreateInfo, nullptr, &buffer->buffer));
+
+	// Create the memory backing up the buffer handle
+	VkMemoryRequirements memReqs;
+	VkMemoryAllocateInfo memAlloc = init::memAllocInfo();
+	vkGetBufferMemoryRequirements(GetDevice(), buffer->buffer, &memReqs);
+	memAlloc.allocationSize = memReqs.size;
+	// Find a memory type index that fits the properties of the buffer
+	memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
+	// If the buffer has VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT set we also need to enable the appropriate flag during allocation
+	VkMemoryAllocateFlagsInfoKHR allocFlagsInfo{};
+	if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
+		allocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO_KHR;
+		allocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+		memAlloc.pNext = &allocFlagsInfo;
+	}
+	VK_CHECK(vkAllocateMemory(GetDevice(), &memAlloc, nullptr, &buffer->memory));
+
+	buffer->alignment = memReqs.alignment;
+	buffer->size = size;
+	buffer->usageFlags = usageFlags;
+	buffer->memoryPropertyFlags = memoryPropertyFlags;
+
+	// If a pointer to the buffer data has been passed, map the buffer and copy over the data
+	if (data != nullptr)
+	{
+		VK_CHECK(buffer->map());
+		memcpy(buffer->mapped, data, size);
+		if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
+			buffer->flush();
+
+		buffer->unmap();
+	}
+
+	// Initialize a default descriptor that covers the whole buffer size
+	buffer->setupDescriptor();
+
+	// Attach the memory to the buffer object
+	return buffer->bind();
 }
 
 void VulkanCore::BeginScene()
@@ -868,6 +1005,7 @@ void VulkanCore::createDebugMessenger()
 {
 	VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
 	debugUtilsCreateInfo.messageSeverity =
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -882,6 +1020,8 @@ void VulkanCore::createDebugMessenger()
 
 	VK_CHECK(vkCreateDebugUtilsMessenger(m_Instance, &debugUtilsCreateInfo, nullptr, &m_DebugMessenger));
 }
+
+#endif //ENABLE_VALIDATION_LAYERS
 
 void VulkanCore::windowResized()
 {
@@ -915,6 +1055,3 @@ void VulkanCore::windowResized()
 	createRenderPass();
 	createFrameBuffer();
 }
-
-
-#endif //ENABLE_VALIDATION_LAYERS

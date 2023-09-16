@@ -83,7 +83,7 @@ namespace test
 			m_CameraPosition.y -= m_CameraMoveSpeed * deltaTime;
 		}
 
-		m_Camera->SetPosition(m_CameraPosition);
+		m_Camera->setPosition(m_CameraPosition);
 
 		objs[0]->Rotate(90.0f * deltaTime, { 0.0f, 0.0f, 1.0f }, Space::Local);
 

@@ -9,10 +9,13 @@ public:
 
 	virtual ~Texture()
 	{
-		vkDestroySampler(m_Core->GetDevice(), m_ImageSampler, nullptr);
-		vkDestroyImageView(m_Core->GetDevice(), m_ImageView, nullptr);
-		vkFreeMemory(m_Core->GetDevice(), m_ImageMemory, nullptr);
-		vkDestroyImage(m_Core->GetDevice(), m_Image, nullptr);
+		if(m_Core)
+		{
+			vkDestroySampler(m_Core->GetDevice(), m_ImageSampler, nullptr);
+			vkDestroyImageView(m_Core->GetDevice(), m_ImageView, nullptr);
+			vkFreeMemory(m_Core->GetDevice(), m_ImageMemory, nullptr);
+			vkDestroyImage(m_Core->GetDevice(), m_Image, nullptr);
+		}
 	}
 
 	void Init(VulkanCore* core) { m_Core = core; }

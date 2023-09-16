@@ -13,13 +13,19 @@ namespace test {
 
 	void TestMenu::OnImGuiRender()
 	{
-		/*for (auto& test : m_Tests)
+		//ImGui::NewFrame();
+
+		ImGui::Begin("ILKR", &isOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+		
+		for (auto& test : m_Tests)
 		{
-			if (ImGui::Button(test.first))
+			if (ImGui::Button(test.first.c_str()))
 			{
 				delete m_CurrentTest;
 				m_CurrentTest = test.second();
 			}
-		}*/
+		}
+		
+		ImGui::End();
 	}
 }

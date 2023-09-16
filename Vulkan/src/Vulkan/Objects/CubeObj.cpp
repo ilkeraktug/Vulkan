@@ -71,6 +71,14 @@ void CubeObj::draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayou
 	vkCmdDraw(commandBuffer, 36, 1, 0, 0);
 }
 
+void CubeObj::draw(VkCommandBuffer commandBuffer)
+{
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &VertexBuffer->GetBuffer(), offsets);
+
+	vkCmdDraw(commandBuffer, 36, 1, 0, 0);
+}
+
 void CubeObj::Rotate(float angle, const glm::vec3& axis)
 {
     m_RotationMatrix = glm::rotate(m_RotationMatrix, glm::radians(angle), axis);

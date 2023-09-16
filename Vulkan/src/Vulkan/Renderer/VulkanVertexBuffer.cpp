@@ -64,7 +64,7 @@ void VulkanVertexBuffer::createBuffer(float* vertices)
 	VkCommandBuffer copyCmdBuffer;
 
 	VkCommandBufferAllocateInfo cmdAllocInfo = init::commandBufferAllocateInfo();
-	cmdAllocInfo.commandPool = m_Core->resources.commandPool;
+	cmdAllocInfo.commandPool = m_Core->resources.copyCommandPool;
 	cmdAllocInfo.commandBufferCount = 1;
 	cmdAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
@@ -88,8 +88,8 @@ void VulkanVertexBuffer::createBuffer(float* vertices)
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &copyCmdBuffer;
 
-	VK_CHECK(vkQueueSubmit(m_Core->queue.GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE));
-	vkQueueWaitIdle(m_Core->queue.GraphicsQueue);
+	VK_CHECK(vkQueueSubmit(m_Core->queue.TransferQueue, 1, &submitInfo, VK_NULL_HANDLE));
+	vkQueueWaitIdle(m_Core->queue.TransferQueue);
 	vkDeviceWaitIdle(m_Core->GetDevice());
 
 	vkDestroyBuffer(m_Core->GetDevice(), stageBuffer, nullptr);

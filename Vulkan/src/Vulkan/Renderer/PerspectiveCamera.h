@@ -10,10 +10,6 @@ public:
 
 	void SetWindowSize(float width, float height);
 
-	void SetRotation(glm::vec3 rotation) { m_Rotation; RecalculateViewMatrix(); }
-
-private:
-	void RecalculateViewMatrix() override;
 private:
 
 	float m_ScreenWidth;
@@ -28,6 +24,4 @@ private:
 	glm::vec3 m_CameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
 
 	glm::vec3 m_WorldUp = { 0.0f, 1.0f, 0.0f };
-
-	glm::vec3 m_Rotation = glm::vec3(0.0f);
 };
