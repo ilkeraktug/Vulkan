@@ -2,8 +2,14 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "Vulkan/Renderer/VulkangltfModel.h"
 
 #include "Test.h"
+
+namespace vkglTF
+{
+    class Model;
+}
 
 class VulkanUniformBuffer;
 class VulkanVertexBuffer;
@@ -28,6 +34,10 @@ namespace test
         float timerSpeed = 0.25f;
         
         bool displayDebug = true;
+
+        std::vector<vkglTF::Model> scenes;
+        std::vector<std::string> sceneNames;
+        int32_t sceneIndex = 0;
         
         virtual void OnUpdate(float deltaTime) override;
         virtual void OnRender() override;
@@ -36,7 +46,7 @@ namespace test
     private:
 
         void runBatchFile();
-            
+        void loadAssets();
         void prepareOffscreenFramebuffer();
         void prepareOffscreenRenderpass();
         void prepareUniformBuffers();

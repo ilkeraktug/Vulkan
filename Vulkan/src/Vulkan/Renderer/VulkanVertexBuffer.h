@@ -1,11 +1,11 @@
 #pragma once
 #include "VulkanCore.h"
 
-#include "Abstract/Buffer.h"
+#include "Abstract/VulkanBuffer.h"
 #include "VertexBufferLayout.h"
 
 
-class VulkanVertexBuffer : public Buffer
+class VulkanVertexBuffer : public VulkanBuffer
 {
 public:
 	VulkanVertexBuffer() {};

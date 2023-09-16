@@ -13,6 +13,12 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_vulkan.h"
 
+#define VK_FLAGS_NONE 0
+
+#define DEFAULT_FENCE_TIMEOUT 100000000000
+
+struct VulkanBuffer;
+
 class VulkanCore
 {
 public:
@@ -30,7 +36,10 @@ public:
 	void SetVsync(bool enable) { swapchain.isVsync = enable; }
 
 	VkDevice GetDevice() { return m_Device; }
-	const VkDevice GetDevice() const { return m_Device; }
+	const VkDevice& GetDevice() const { return m_Device; }
+	
+	VkPhysicalDevice GetPhysicalDevice() { return m_PhysicalDevice; }
+	const VkPhysicalDevice& GetPhysicalDevice() const { return m_PhysicalDevice; }
 
 	const VkPhysicalDeviceProperties& GetPhysicalDeviceProperties() const { return m_PhysicalDeviceProperties; }
 
@@ -38,6 +47,13 @@ public:
 	VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin);
 	VkCommandBuffer createCopyCommandBuffer(VkCommandBufferLevel level, bool begin);
 
+	void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, VkCommandPool pool, bool free = true);
+	void flushCopyCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
+	void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
+
+	VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, VkBuffer *buffer, VkDeviceMemory *memory, void *data = nullptr);
+	VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VulkanBuffer *buffer, VkDeviceSize size, void *data = nullptr);
+	
 	struct
 	{
 		uint32_t Graphics = UINT32_MAX;

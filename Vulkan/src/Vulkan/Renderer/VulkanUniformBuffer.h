@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Abstract/Buffer.h"
+#include "Abstract/VulkanBuffer.h"
 
 #include "VulkanCore.h"
 
 #define UNIFORM_BUFFER_COPY_DATA(object, data) object->copyData(&data, sizeof(data))
 
-class VulkanUniformBuffer : public Buffer
+class VulkanUniformBuffer : public VulkanBuffer
 {
 public:
 	VulkanUniformBuffer() = default;

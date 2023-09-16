@@ -65,6 +65,7 @@ void main()
 	//outFragColor = vec4(inUV, 0.0f, 1.0f);
 	//outFragColor = vec4(inLightVec, 1.0);
 	//outFragColor = vec4(diffuse * shadow, 1.0);
-	outFragColor = vec4(diffuse * shadow, 1.0);
+	//outFragColor = vec4(diffuse * shadow, 1.0);
+	outFragColor = vec4(inUV, 0.0f, 1.0);
 
 }

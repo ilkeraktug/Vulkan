@@ -14,6 +14,9 @@ IncludeDir["imgui"] = "Vulkan/vendor/imgui"
 IncludeDir["spdlog"] = "Vulkan/vendor/spdlog/include"
 IncludeDir["stb_image"] = "Vulkan/vendor/stb_image"
 IncludeDir["tiny_obj_loader"] = "Vulkan/vendor/tiny_obj_loader"
+IncludeDir["tinygltf"] = "Vulkan/vendor/tinygltf"
+IncludeDir["ktx"] = "Vulkan/vendor/ktx/include"
+IncludeDir["ktxOther"] = "Vulkan/vendor/ktx/other_include"
 
 --vulkan include default location
 IncludeDir["vulkan"] = VulkanSDK .. "/Include"
@@ -21,6 +24,7 @@ IncludeDir["vulkan"] = VulkanSDK .. "/Include"
 
 include "Vulkan/vendor/glfw"
 include "Vulkan/vendor/imgui"
+include "Vulkan/vendor/ktx"
 
 	project "Vulkan"
 		location "Vulkan"
@@ -48,7 +52,8 @@ include "Vulkan/vendor/imgui"
 	{	
 		"GLFW_INCLUDE_VULKAN",
 		"GLM_FORCE_RADIANS",
-		"GLM_FORCE_DEPTH_ZERO_TO_ONE"
+		"GLM_FORCE_DEPTH_ZERO_TO_ONE",
+		"TINYGLTF_NO_STB_IMAGE_WRITE"
 	}
 
 	includedirs
@@ -60,7 +65,10 @@ include "Vulkan/vendor/imgui"
 		"%{IncludeDir.vulkan}",
 		"%{IncludeDir.spdlog}",
 		"%{IncludeDir.stb_image}",
-		"%{IncludeDir.tiny_obj_loader}"
+		"%{IncludeDir.tiny_obj_loader}",
+		"%{IncludeDir.tinygltf}",
+		"%{IncludeDir.ktx}",
+		"%{IncludeDir.ktxOther}"
 	}
 
 	libdirs
@@ -73,7 +81,8 @@ include "Vulkan/vendor/imgui"
 	{
 		"glfw",
 		"imgui",
-		"vulkan-1.lib"
+		"vulkan-1.lib",
+		"KTX"
 	}
 
 	filter { "system:windows" }

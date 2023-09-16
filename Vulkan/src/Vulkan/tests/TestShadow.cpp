@@ -4,6 +4,7 @@
 #include "Vulkan/Core/LogHelper.h"
 #include "Vulkan/Core/Time.h"
 #include "Vulkan/Objects/CubeObj.h"
+#include "Vulkan/Renderer/glTFModel.h"
 #include "Vulkan/Renderer/PerspectiveCamera.h"
 #include "Vulkan/Renderer/VulkanShader.h"
 
@@ -117,7 +118,7 @@ namespace test
 		OffscreenVertexBuffer.reset(new VulkanVertexBuffer(Offscreenvertices, sizeof(Offscreenvertices), core));
 		OffscreenVertexBuffer->SetLayout(Offscreenlayout);
 		runBatchFile();
-    
+		loadAssets();
 		prepareOffscreenFramebuffer();
 		prepareUniformBuffers();
 		setupDescriptorSetLayout();
@@ -261,6 +262,15 @@ namespace test
 	{
 		std::system( "@echo off & cd C:\\dev\\Vulkan\\Vulkan\\assets\\shaders\\shadowmapping & for %i in (*.vert) do (%VULKAN_SDK%/Bin/glslc.exe %i -o %~ni.vspv)");
 		std::system( "@echo off & cd C:\\dev\\Vulkan\\Vulkan\\assets\\shaders\\shadowmapping & for %i in (*.frag) do (%VULKAN_SDK%/Bin/glslc.exe %i -o %~ni.fspv)");
+	}
+
+	void TestShadow::loadAssets()
+	{
+		const uint32_t glTFLoadingFlags = vkglTF::FileLoadingFlags::PreTransformVertices | vkglTF::FileLoadingFlags::PreMultiplyVertexColors | vkglTF::FileLoadingFlags::FlipY;
+		scenes.resize(2);
+		scenes[0].loadFromFile("assets/models/vulkanscene_shadow.gltf", m_Core, m_Core->queue.TransferQueue, glTFLoadingFlags);
+		scenes[1].loadFromFile("assets/models/samplescene.gltf", m_Core, m_Core->queue.TransferQueue, glTFLoadingFlags);
+		sceneNames = {"Vulkan scene", "Teapots and pillars" };
 	}
 
 	void TestShadow::prepareOffscreenFramebuffer()
@@ -494,8 +504,9 @@ namespace test
 		vertexInputState.vertexAttributeDescriptionCount = VertexBuffer->GetVertexAttributes().size();
 		vertexInputState.pVertexAttributeDescriptions = VertexBuffer->GetVertexAttributes().data();
 
-	
+
 		pipelineCI.pVertexInputState = &vertexInputState;
+		pipelineCI.pVertexInputState  = vkglTF::Vertex::getPipelineVertexInputState({vkglTF::VertexComponent::Position, vkglTF::VertexComponent::UV, vkglTF::VertexComponent::Color, vkglTF::VertexComponent::Normal});
 		rasterizationStateCI.cullMode = VK_CULL_MODE_FRONT_AND_BACK;
 		shaderStages[0] = VulkanShader::GetShaderModule(m_Core->GetDevice(), "assets/shaders/shadowmapping/scene.vspv", VK_SHADER_STAGE_VERTEX_BIT);
 		shaderStages[1] = VulkanShader::GetShaderModule(m_Core->GetDevice(), "assets/shaders/shadowmapping/scene.fspv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -681,12 +692,14 @@ namespace test
 				//vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &OffscreenVertexBuffer->GetBuffer(), offsets);
 
 				//vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets.scene, 0, nullptr);
-				vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &OffscreenVertexBuffer->GetBuffer(), offsets);
-				vkCmdDraw(drawCmdBuffers[i], 36, 1, 0, 0);
+				//vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &OffscreenVertexBuffer->GetBuffer(), offsets);
+				//vkCmdDraw(drawCmdBuffers[i], 36, 1, 0, 0);
 
 				//vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets.ILKER, 0, nullptr);
-				vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &OffscreenVertexBuffer->GetBuffer(), offsets);
-				vkCmdDraw(drawCmdBuffers[i], 36, 1, 0, 0);
+				//vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &OffscreenVertexBuffer->GetBuffer(), offsets);
+				//vkCmdDraw(drawCmdBuffers[i], 36, 1, 0, 0);
+
+				scenes[sceneIndex].draw(drawCmdBuffers[i]);
 				
 				vkCmdEndRenderPass(drawCmdBuffers[i]);
 			}
@@ -740,15 +753,17 @@ namespace test
 				{
 					vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets.scene, 0, nullptr);
 					vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipelines.SceneShadow);
-					vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &VertexBuffer->GetBuffer(), offsets);
+					//vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &VertexBuffer->GetBuffer(), offsets);
 
-					vkCmdDraw(drawCmdBuffers[i], 36, 1, 0, 0);
-
+					//vkCmdDraw(drawCmdBuffers[i], 36, 1, 0, 0);
+					scenes[sceneIndex].draw(drawCmdBuffers[i]);
 					
 					vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets.ILKER, 0, nullptr);
 					vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipelines.SceneShadow);
-					vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &VertexBuffer->GetBuffer(), offsets);
-					vkCmdDraw(drawCmdBuffers[i], 36, 1, 0, 0);
+					//vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &VertexBuffer->GetBuffer(), offsets);
+					//vkCmdDraw(drawCmdBuffers[i], 36, 1, 0, 0);
+
+					scenes[sceneIndex].draw(drawCmdBuffers[i]);
 				}
 				// 3D scene
 
@@ -825,7 +840,8 @@ namespace test
 		uboVSILKER.depthBiasMVP = uboOffscreenVS.depthMVP;
 		uboVSILKER.zNear = zNear;
 		uboVSILKER.zFar = zFar;
-		
+		uboVSILKER.model = glm::mat4(1.0f);
+
 		if(m_UniformBuffers.SceneBuffer)
 		{
 			m_UniformBuffers.SceneBuffer->copyData(&uboVSscene, sizeof(uboVSscene));
