@@ -2,11 +2,11 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Abstract/VulkanBuffer.h"
+#include "Abstract/VK_VulkanBuffer.h"
 
 #include "VulkanCore.h"
 
-class VulkanIndexBuffer : public VulkanBuffer
+class VulkanIndexBuffer : public VK_VulkanBuffer
 {
 public:
 	VulkanIndexBuffer() = default;

@@ -15,6 +15,7 @@
 #include "tests/TestImGui.h"
 #include "tests/TestShadow.h"
 #include "tests/TestShadowMapping.h"
+#include "tests/RTX/RTXBasic.h"
 
 Application::Application()
 {
@@ -24,13 +25,33 @@ Application::Application()
     Log::Init();
     VK_CORE_INFO("Application created!");
 
-    std::vector<const char*> enableExtension = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    std::vector<const char*> enableExtension = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+        VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+        VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME
+    };
+
+    enabledBufferDeviceAddresFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    enabledBufferDeviceAddresFeatures.bufferDeviceAddress = VK_TRUE;
+
+    enabledRayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    enabledRayTracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
+    enabledRayTracingPipelineFeatures.pNext = &enabledBufferDeviceAddresFeatures;
+
+    enabledAccelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    enabledAccelerationStructureFeatures.accelerationStructure = VK_TRUE;
+    enabledAccelerationStructureFeatures.pNext = &enabledRayTracingPipelineFeatures;
 
     m_Window.reset(new Window());
 
-    m_VulkanCore.reset(new VulkanCore(enableExtension));
+    m_VulkanCore.reset(new VulkanCore(enableExtension, &enabledAccelerationStructureFeatures));
 
-    m_CurrentTest = new test::TestShadow(m_VulkanCore.get());
+    m_CurrentTest = new test::RTXBasic(m_VulkanCore.get());
     
    //m_TestMenu = new test::TestMenu(m_CurrentTest);
    //m_TestMenu->PushMenu<test::TestFlappyBird>("TestFlappyBird");

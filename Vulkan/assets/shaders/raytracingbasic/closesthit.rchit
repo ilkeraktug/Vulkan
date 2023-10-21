@@ -8,5 +8,5 @@ hitAttributeEXT vec2 attribs;
 void main()
 {
   const vec3 barycentricCoords = vec3(1.0f - attribs.x - attribs.y, attribs.x, attribs.y);
-  hitValue = vec3(1.0f, 0.5f, 0.31f);
+  hitValue = barycentricCoords;
 }

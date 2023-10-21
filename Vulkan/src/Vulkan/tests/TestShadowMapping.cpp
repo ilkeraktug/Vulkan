@@ -504,6 +504,7 @@ namespace test {
 
 	void TestShadowMapping::windowResized()
 	{
+		VK_CORE_INFO("TestShadowMapping::windowResized");
 	}
 
 }

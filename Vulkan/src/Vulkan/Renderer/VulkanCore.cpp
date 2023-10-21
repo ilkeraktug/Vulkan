@@ -38,6 +38,23 @@ VulkanCore::VulkanCore(std::vector<const char*> enabledDeviceExtensions)
 	initImGui();
 }
 
+VulkanCore::VulkanCore(std::vector<const char*> enabledDeviceExtensions, void* pNextEnableFeatures)
+	:m_DeviceCreateInfopNext(pNextEnableFeatures)
+{
+	createInstance();
+	createPhysicalDevice();
+	checkEnabledDeviceFeatures(enabledDeviceExtensions);
+	createLogicalDevice();
+	createSwapchain();
+	createDepthStencilBuffer();
+	createCommandBuffers();
+	createRenderPass();
+	createFrameBuffer();
+
+	createSyncObjs();
+	initImGui();
+}
+
 VulkanCore::~VulkanCore()
 {
 #ifdef ENABLE_VALIDATION_LAYERS
@@ -305,7 +322,7 @@ VkResult VulkanCore::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropert
 	buffer->device = GetDevice();
 
 	// Create the buffer handle
-	VkBufferCreateInfo bufferCreateInfo = init::createBufferInfo(usageFlags, size);
+	VkBufferCreateInfo bufferCreateInfo = init::createBufferInfo(size, usageFlags);
 	VK_CHECK(vkCreateBuffer(GetDevice(), &bufferCreateInfo, nullptr, &buffer->buffer));
 
 	// Create the memory backing up the buffer handle
@@ -383,7 +400,7 @@ void VulkanCore::createInstance()
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "Vulkan Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
+	appInfo.apiVersion = VK_API_VERSION_1_1;
 
 	std::vector<const char*> instanceExtensions = { VK_KHR_SURFACE_EXTENSION_NAME };
 #ifdef PLATFORM_WINDOWS
@@ -536,7 +553,13 @@ void VulkanCore::createLogicalDevice()
 	/*if(supportedDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME))
 		m_EnabledDeviceExtension.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);*/
 
+	if(supportedDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME))
+	{
+		m_EnabledDeviceExtension.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+	}
+	
 	VkDeviceCreateInfo deviceCreateInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+	deviceCreateInfo.pNext = m_DeviceCreateInfopNext;
 	deviceCreateInfo.queueCreateInfoCount = (uint32_t)deviceQueueCreateInfo.size();
 	deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfo.data();
 	deviceCreateInfo.enabledExtensionCount = (uint32_t)m_EnabledDeviceExtension.size();
@@ -591,7 +614,7 @@ void VulkanCore::createSwapchain()
 
 	for (auto& surfaceFormat : surfaceFormats)
 	{
-		if (surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB)
+		if (surfaceFormat.format == VK_FORMAT_B8G8R8A8_UNORM)
 		{
 			swapchain.colorFormat = surfaceFormat.format;
 			swapchain.colorSpace  = surfaceFormat.colorSpace;
@@ -898,7 +921,12 @@ void VulkanCore::checkEnabledDeviceFeatures(std::vector<const char*> enabledDevi
 	{
 		if (supportedDeviceExtension(enabledDeviceExtensions[i]))
 		{
+			VK_INFO("Extension{0} is supported", enabledDeviceExtensions[i]);
 			m_EnabledDeviceExtension.push_back(enabledDeviceExtensions[i]);
+		}
+		else
+		{
+			VK_ERROR("Extension{0} is NOT supported", enabledDeviceExtensions[i]);
 		}
 	}
 }
@@ -1005,7 +1033,6 @@ void VulkanCore::createDebugMessenger()
 {
 	VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
 	debugUtilsCreateInfo.messageSeverity =
-		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;

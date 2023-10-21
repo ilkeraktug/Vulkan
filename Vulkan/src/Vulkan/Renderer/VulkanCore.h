@@ -18,12 +18,14 @@
 #define DEFAULT_FENCE_TIMEOUT 100000000000
 
 struct VulkanBuffer;
+struct VK_VulkanBuffer;
 
 class VulkanCore
 {
 public:
 	VulkanCore();
 	VulkanCore(std::vector<const char*> enabledDeviceExtensions);
+	VulkanCore(std::vector<const char*> enabledDeviceExtensions, void* pNextEnableFeatures);
 	~VulkanCore();
 
 	void enableDeviceExtension(const std::vector<const char*>& extensionList);
@@ -53,6 +55,9 @@ public:
 
 	VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, VkBuffer *buffer, VkDeviceMemory *memory, void *data = nullptr);
 	VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VulkanBuffer *buffer, VkDeviceSize size, void *data = nullptr);
+
+	operator VkDevice() const { return m_Device; }
+	operator VkDevice&() { return m_Device; }
 	
 	struct
 	{
@@ -126,7 +131,9 @@ public:
 	//VkResult acquireNextImage(uint32_t* imageIndex);
 	VkResult Submit();
 
-	void windowResized();
+	virtual void windowResized();
+
+	virtual void getEnabledFutures() {}
 private:
 	void createInstance();
 	void createPhysicalDevice();
@@ -171,4 +178,6 @@ private:
 	std::vector<std::string> m_SupportedDeviceExtension;
 	std::vector<const char*> m_EnabledDeviceExtension;
 	VkPhysicalDeviceFeatures m_EnabledDeviceFeatures{};
+	
+	void* m_DeviceCreateInfopNext = nullptr;
 };

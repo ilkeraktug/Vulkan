@@ -4,7 +4,7 @@
 
 namespace vkTool
 {
-	void setImageLayout(
+	static void setImageLayout(
 		VkCommandBuffer cmdbuffer,
 		VkImage image,
 		VkImageLayout oldImageLayout,
@@ -127,7 +127,7 @@ namespace vkTool
 	}
 
 	// Fixed sub resource on first mip level and layer
-	void setImageLayout(
+	static void setImageLayout(
 		VkCommandBuffer cmdbuffer,
 		VkImage image,
 		VkImageAspectFlags aspectMask,

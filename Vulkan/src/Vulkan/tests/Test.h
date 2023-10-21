@@ -13,7 +13,7 @@ namespace test {
 
 		void Init(VulkanCore* core) { m_Core = core; };
 
-		virtual void windowResized() {};
+		virtual void windowResized() { 		VK_CORE_INFO("Test::windowResized"); };
 
 		virtual void OnUpdate(float deltaTime) = 0;
 		virtual void OnRender() = 0;
