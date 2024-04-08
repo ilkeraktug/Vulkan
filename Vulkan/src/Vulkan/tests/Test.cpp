@@ -5,10 +5,12 @@ namespace test {
 
 	void TestMenu::OnUpdate(float deltaTime)
 	{
+		m_CurrentTest->OnUpdate(deltaTime);
 	}
 
 	void TestMenu::OnRender()
 	{
+		m_CurrentTest->OnRender();
 	}
 
 	void TestMenu::OnImGuiRender()

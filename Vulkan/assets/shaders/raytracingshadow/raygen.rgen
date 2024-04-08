@@ -1,0 +1,62 @@
+RaytracingAccelerationStructure rtxAS : register(t0);
+RWTexture2D<float4> OutputTexture : register(u1);
+
+//cbuffer u_CamProps : register(b2)
+//{
+//    float4x4 inverseView;
+//    float4x4 inverseProj;
+//    float4 lightPos;
+//};
+
+struct CameraProperties
+{
+	float4x4 inverseProj;
+	float4x4 inverseView;
+	float4 lightPos;
+};
+
+cbuffer cam : register(b2) { CameraProperties cam; };
+
+struct Payload
+{
+    float3 hitValue;
+};
+
+[shader("raygeneration")]
+void main()
+{
+    uint3 RayIndex = DispatchRaysIndex(); 
+    uint3 RayDimension = DispatchRaysDimensions();
+    
+    float2 pixelCoord = RayIndex.xy + float2(0.5f, 0.5f);
+    float2 uv = pixelCoord / RayDimension.xy;
+    
+    float2 pixelCoordNDC = uv * 2.0f - 1.0f; 
+    float4 pixelCoordViewSpace = mul(cam.inverseProj, float4(pixelCoordNDC.x, pixelCoordNDC.y, 1.0f, 1.0f));
+    float4 pixelCoordWorldSpace = mul(cam.inverseView, pixelCoordViewSpace);
+    
+    float4 camOriginWorldSpace = mul(cam.inverseView, float4(0.0f, 0.0f, 0.0f, 1.0f));
+    
+    //RayDesc rayDesc;
+    //rayDesc.Origin = camOriginWorldSpace.xyz;
+    //rayDesc.TMin = 0.001f;
+    //rayDesc.Direction = normalize(pixelCoordWorldSpace).xyz;
+    //rayDesc.TMax = 100000.0f;
+    
+    const float2 pixelCenter = float2(RayIndex.xy) + float2(0.5, 0.5);
+    const float2 inUV = pixelCenter/float2(RayDimension.xy);
+    float2 d = inUV * 2.0 - 1.0;
+    float4 target = mul(cam.inverseProj, float4(d.x, d.y, 1, 1));
+    	
+    RayDesc rayDesc;
+    rayDesc.Origin = mul(cam.inverseView, float4(0,0,0,1)).xyz;
+    rayDesc.Direction = mul(cam.inverseView, float4(normalize(target.xyz), 0)).xyz;
+    rayDesc.TMin = 0.001;
+    rayDesc.TMax = 10000.0;
+    
+    Payload payload;
+    
+    TraceRay(rtxAS, RAY_FLAG_FORCE_OPAQUE, 0xff, 0, 0, 0, rayDesc, payload);
+    
+    OutputTexture[RayIndex.xy] = float4(payload.hitValue, 1.0f);
+}

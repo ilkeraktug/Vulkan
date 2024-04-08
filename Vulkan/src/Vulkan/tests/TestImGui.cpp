@@ -40,7 +40,7 @@ namespace test
 
 		objs[0]->SetScale(5.0f, 5.0f, 0.0f);
 		objs[0]->SetRotation(0.0f, 0.0f, 45.0f);
-		m_Texture.reset(new VulkanTexture2D("assets/textures/face.jpg", m_Core));
+		m_Texture.reset(new VulkanTexture2D("C:/dev/Vulkan/Vulkan/assets/textures/flappyBird/bird.png", m_Core));
 
 		UI = new VulkanUI(core);
 
@@ -49,6 +49,7 @@ namespace test
 
 		UI->OnUpdate();
 		setCmdBuffers();
+		isInit = true;
 	}
 
 	TestImGui::~TestImGui()
@@ -73,6 +74,8 @@ namespace test
 
 	void TestImGui::OnRender()
 	{
+		if(!isInit) return;
+		
 		m_Core->BeginScene();
 
 		m_Core->resources.submitInfo.commandBufferCount = 1;
@@ -95,11 +98,6 @@ namespace test
 
 	void TestImGui::OnImGuiRender()
 	{
-		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-
-		ImGui::NewFrame();
-
 		ImGui::Text("Fps : %f", ImGui::GetIO().Framerate);
 
 		//ImGui::EndFrame();
@@ -162,14 +160,14 @@ namespace test
 				writeDescriptors[0].dstBinding = 0;
 				writeDescriptors[0].descriptorCount = 1;
 				writeDescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				writeDescriptors[0].pBufferInfo = &objs[i]->ModelBuffer->GetBufferInfo();
+				writeDescriptors[0].pBufferInfo = &objs[i]->ModelBuffer->GetBufferInfoRef();
 
 				writeDescriptors[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				writeDescriptors[1].dstSet = objs[i]->DescriptorSets[j];
 				writeDescriptors[1].dstBinding = 1;
 				writeDescriptors[1].descriptorCount = 1;
 				writeDescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				writeDescriptors[1].pBufferInfo = &m_Camera->MatricesBuffer->GetBufferInfo();
+				writeDescriptors[1].pBufferInfo = &m_Camera->MatricesBuffer->GetBufferInfoRef();
 
 				writeDescriptors[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				writeDescriptors[2].dstSet = objs[i]->DescriptorSets[j];
@@ -194,7 +192,7 @@ namespace test
 
 		VkPipelineVertexInputStateCreateInfo vertexInputState = init::pipelineVertexInputState();
 		vertexInputState.vertexBindingDescriptionCount = 1;
-		vertexInputState.pVertexBindingDescriptions = &m_VertexBuffer->GetVertexInput();
+		vertexInputState.pVertexBindingDescriptions = &m_VertexBuffer->GetVertexInputRef();
 		vertexInputState.vertexAttributeDescriptionCount = m_VertexBuffer->GetVertexAttributes().size();
 		vertexInputState.pVertexAttributeDescriptions = m_VertexBuffer->GetVertexAttributes().data();
 

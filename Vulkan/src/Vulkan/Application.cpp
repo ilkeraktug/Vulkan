@@ -9,13 +9,16 @@
 #include "Vulkan/Core/Core.h"
 #include "Vulkan/Core/Log.h"
 #include "Core/Time.h"
+#include "Platform/WindowsInput.h"
 
 #include "tests/TestGraphicsPipeline.h"
 #include "tests/TestFlappyBird.h"
 #include "tests/TestImGui.h"
 #include "tests/TestShadow.h"
 #include "tests/TestShadowMapping.h"
-#include "tests/RTX/RTXBasic.h"
+#include "tests/RTX/Basic/RTXBasic.h"
+#include "tests/RTX/Reflection/RTXReflection.h"
+#include "tests/RTX/Shadow/RTXShadow.h"
 
 Application::Application()
 {
@@ -33,7 +36,8 @@ Application::Application()
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
         VK_KHR_SPIRV_1_4_EXTENSION_NAME,
-        VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME
+        VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+        VK_KHR_RAY_QUERY_EXTENSION_NAME
     };
 
     enabledBufferDeviceAddresFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
@@ -47,30 +51,32 @@ Application::Application()
     enabledAccelerationStructureFeatures.accelerationStructure = VK_TRUE;
     enabledAccelerationStructureFeatures.pNext = &enabledRayTracingPipelineFeatures;
 
+    enabledRayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+    enabledRayQueryFeatures.rayQuery = VK_TRUE;
+    enabledRayQueryFeatures.pNext = &enabledAccelerationStructureFeatures;
+
     m_Window.reset(new Window());
-
-    m_VulkanCore.reset(new VulkanCore(enableExtension, &enabledAccelerationStructureFeatures));
-
-    m_CurrentTest = new test::RTXBasic(m_VulkanCore.get());
+    m_Window->SetCallback(std::bind(WindowsInput::OnEvent, std::placeholders::_1));
     
-   //m_TestMenu = new test::TestMenu(m_CurrentTest);
-   //m_TestMenu->PushMenu<test::TestFlappyBird>("TestFlappyBird");
-   //m_TestMenu->PushMenu<test::TestGraphicsPipeline>("TestGraphicsPipeline");
+    m_VulkanCore.reset(new VulkanCore(enableExtension, &enabledRayQueryFeatures));
+
+   // m_CurrentTest = new test::RTXBasic(m_VulkanCore.get());
+    m_CurrentTest = new test::RTXShadow(m_VulkanCore.get());
+    //m_CurrentTest = new test::RTXReflection(m_VulkanCore.get());
+    //m_CurrentTest = new test::TestFlappyBird(m_VulkanCore.get());
+    //m_CurrentTest = new test::TestImGui(m_VulkanCore.get());
+
+   // m_TestMenu = new test::TestMenu(m_CurrentTest);
+   // m_TestMenu->PushMenu<test::TestFlappyBird>("TestFlappyBird");
+   // m_TestMenu->PushMenu<test::TestGraphicsPipeline>("TestGraphicsPipeline");
 }
 
 Application::~Application()
 {
-    glfwTerminate();
-
-    if (m_TestMenu)
-    {
-        delete m_TestMenu;
-    }
-
-    if (m_CurrentTest)
-    {
-        delete m_CurrentTest;
-    }
+    //glfwTerminate();
+    
+    delete m_TestMenu;
+    delete m_CurrentTest;
 }
 
 void Application::Run()
@@ -80,20 +86,31 @@ void Application::Run()
         Time::OnUpdate();
 
         m_Window->OnUpdate();
-
+        
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
 
         ImGui::NewFrame();
-		
+        
+        // if (m_CurrentTest)
+        // {
+        //     m_CurrentTest->OnUpdate(Time::deltaTime);
+        //     m_CurrentTest->OnImGuiRender();
+        //
+        //     m_CurrentTest->OnRender();
+        // }
+        //
+        
         if (m_CurrentTest)
         {
             m_CurrentTest->OnUpdate(Time::deltaTime);
             m_CurrentTest->OnImGuiRender();
-
             m_CurrentTest->OnRender();
         }
-        
+
+       // VK_CORE_INFO("DeltaTime:{0}, FPS:{1}", Time::deltaTime, 1/Time::deltaTime);
+
         ImGui::EndFrame();
+        
     }
 }

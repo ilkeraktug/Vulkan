@@ -4,7 +4,9 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "RTXBuilder.h"
 #include "VulkanBuffer.h"
+#include "VulkanFunctions.h"
 
 VulkanCore::VulkanCore()
 {
@@ -16,10 +18,11 @@ VulkanCore::VulkanCore()
 	createCommandBuffers();
 	createRenderPass();
 	createFrameBuffer();
-
 	createSyncObjs();
 
 	initImGui();
+	
+	createDependencies();
 }
 
 VulkanCore::VulkanCore(std::vector<const char*> enabledDeviceExtensions)
@@ -33,9 +36,11 @@ VulkanCore::VulkanCore(std::vector<const char*> enabledDeviceExtensions)
 	createCommandBuffers();
 	createRenderPass();
 	createFrameBuffer();
-
 	createSyncObjs();
+	
 	initImGui();
+	
+	createDependencies();
 }
 
 VulkanCore::VulkanCore(std::vector<const char*> enabledDeviceExtensions, void* pNextEnableFeatures)
@@ -50,9 +55,11 @@ VulkanCore::VulkanCore(std::vector<const char*> enabledDeviceExtensions, void* p
 	createCommandBuffers();
 	createRenderPass();
 	createFrameBuffer();
-
 	createSyncObjs();
+	
 	initImGui();
+	
+	createDependencies();
 }
 
 VulkanCore::~VulkanCore()
@@ -228,6 +235,28 @@ VkCommandBuffer VulkanCore::createCopyCommandBuffer(VkCommandBufferLevel level, 
 	return cmdBuffer;
 }
 
+VkCommandBuffer VulkanCore::createComputeCommandBuffer(VkCommandBufferLevel level, bool begin)
+{
+	VkCommandBuffer cmdBuffer;
+
+	VkCommandBufferAllocateInfo cmdBufferAI = init::commandBufferAllocateInfo();
+	cmdBufferAI.commandBufferCount = 1;
+	cmdBufferAI.commandPool = resources.computeCommandPool;
+	cmdBufferAI.level = level;
+
+	VK_CHECK(vkAllocateCommandBuffers(m_Device, &cmdBufferAI, &cmdBuffer));
+
+	if (begin)
+	{
+		VkCommandBufferBeginInfo beginInfo = init::cmdBufferBeginInfo();
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		VK_CHECK(vkBeginCommandBuffer(cmdBuffer, &beginInfo));
+	}
+
+	return cmdBuffer;
+}
+
 void VulkanCore::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, VkCommandPool pool, bool free)
 {
 	if (commandBuffer == VK_NULL_HANDLE)
@@ -260,6 +289,11 @@ void VulkanCore::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue
 void VulkanCore::flushCopyCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
 {
 	return flushCommandBuffer(commandBuffer, queue, resources.copyCommandPool, free);
+}
+
+void VulkanCore::flushComputeCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
+{
+	return flushCommandBuffer(commandBuffer, queue, resources.computeCommandPool, free);
 }
 
 void VulkanCore::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
@@ -370,8 +404,8 @@ void VulkanCore::BeginScene()
 
 	if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
 		windowResized();
-	else
-		VK_CHECK(err);
+	//else
+		//VK_CHECK(err);
 }
 
 VkResult VulkanCore::Submit()
@@ -388,9 +422,25 @@ VkResult VulkanCore::Submit()
 	if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
 		windowResized();
 	else
+	{
 		VK_CHECK(err);
+	}
 
 	return err;
+}
+
+void VulkanCore::getRTXFunctionPtrs()
+{
+	VK_PFN_IMPLEMENT(m_Device, vkGetBufferDeviceAddressKHR);
+	VK_PFN_IMPLEMENT(m_Device, vkCreateAccelerationStructureKHR);
+	VK_PFN_IMPLEMENT(m_Device, vkDestroyAccelerationStructureKHR);
+	VK_PFN_IMPLEMENT(m_Device, vkGetAccelerationStructureDeviceAddressKHR);
+	VK_PFN_IMPLEMENT(m_Device, vkGetAccelerationStructureBuildSizesKHR);
+	VK_PFN_IMPLEMENT(m_Device, vkCmdBuildAccelerationStructuresKHR);
+	VK_PFN_IMPLEMENT(m_Device, vkBuildAccelerationStructuresKHR);
+	VK_PFN_IMPLEMENT(m_Device, vkCmdTraceRaysKHR);
+	VK_PFN_IMPLEMENT(m_Device, vkGetRayTracingShaderGroupHandlesKHR);
+	VK_PFN_IMPLEMENT(m_Device, vkCreateRayTracingPipelinesKHR);
 }
 
 void VulkanCore::createInstance()
@@ -400,7 +450,7 @@ void VulkanCore::createInstance()
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "Vulkan Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_1;
+	appInfo.apiVersion = VK_API_VERSION_1_2;
 
 	std::vector<const char*> instanceExtensions = { VK_KHR_SURFACE_EXTENSION_NAME };
 #ifdef PLATFORM_WINDOWS
@@ -571,6 +621,8 @@ void VulkanCore::createLogicalDevice()
 	vkGetDeviceQueue(m_Device, queueIndex.Graphics, 0, &queue.GraphicsQueue);
 	vkGetDeviceQueue(m_Device, queueIndex.Transfer, 0, &queue.TransferQueue);
 	vkGetDeviceQueue(m_Device, queueIndex.Compute, 0, &queue.ComputeQueue);
+
+	getRTXFunctionPtrs();
 }
 
 void VulkanCore::createSwapchain()
@@ -788,6 +840,12 @@ void VulkanCore::createCommandBuffers()
 
 	VK_CHECK(vkCreateCommandPool(m_Device, &copyCommandPoolCI, nullptr, &resources.copyCommandPool));
 
+	VkCommandPoolCreateInfo computeCommandPoolCI = init::commandPoolCreateInfo();
+	computeCommandPoolCI.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	computeCommandPoolCI.queueFamilyIndex = queueIndex.Compute;
+
+	VK_CHECK(vkCreateCommandPool(m_Device, &computeCommandPoolCI, nullptr, &resources.computeCommandPool));
+
 	resources.drawCmdBuffers.resize(swapchain.images.size());
 
 	VkCommandBufferAllocateInfo cmdBufferAlloc = init::commandBufferAllocateInfo();
@@ -967,7 +1025,7 @@ void VulkanCore::initImGui()
 	ImGui::CreateContext();
 
 	//this initializes imgui for SDL
-	ImGui_ImplGlfw_InitForVulkan(static_cast<GLFWwindow*>(Window::GetWindow()), true);
+	ImGui_ImplGlfw_InitForVulkan(static_cast<GLFWwindow*>(Window::GetWindow()), false);
 
 	//this initializes imgui for Vulkan
 	ImGui_ImplVulkan_InitInfo init_info = {};
@@ -1008,6 +1066,11 @@ void VulkanCore::initImGui()
 	ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
+void VulkanCore::createDependencies()
+{
+	m_RTXBuilder = std::make_shared<RTXBuilder>(this);
+}
+
 #ifdef ENABLE_VALIDATION_LAYERS
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
@@ -1033,6 +1096,7 @@ void VulkanCore::createDebugMessenger()
 {
 	VkDebugUtilsMessengerCreateInfoEXT debugUtilsCreateInfo{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
 	debugUtilsCreateInfo.messageSeverity =
+		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;

@@ -64,7 +64,7 @@ namespace test
 
 	void TestGraphicsPipeline::OnUpdate(float deltaTime)
 	{
-
+return;
 		if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_A) == GLFW_PRESS)
 		{
 			m_CameraPosition.x -= m_CameraMoveSpeed * deltaTime;
@@ -167,14 +167,14 @@ namespace test
 				writeDescriptors[0].dstBinding = 0;
 				writeDescriptors[0].descriptorCount = 1;
 				writeDescriptors[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				writeDescriptors[0].pBufferInfo = &objs[i]->ModelBuffer->GetBufferInfo();
+				writeDescriptors[0].pBufferInfo = &objs[i]->ModelBuffer->GetBufferInfoRef();
 
 				writeDescriptors[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				writeDescriptors[1].dstSet = objs[i]->DescriptorSets[j];
 				writeDescriptors[1].dstBinding = 1;
 				writeDescriptors[1].descriptorCount = 1;
 				writeDescriptors[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				writeDescriptors[1].pBufferInfo = &m_Camera->MatricesBuffer->GetBufferInfo();
+				writeDescriptors[1].pBufferInfo = &m_Camera->MatricesBuffer->GetBufferInfoRef();
 
 				writeDescriptors[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				writeDescriptors[2].dstSet = objs[i]->DescriptorSets[j];
@@ -199,7 +199,7 @@ namespace test
 
 		VkPipelineVertexInputStateCreateInfo vertexInputState = init::pipelineVertexInputState();
 		vertexInputState.vertexBindingDescriptionCount   = 1;
-		vertexInputState.pVertexBindingDescriptions = &m_VertexBuffer->GetVertexInput();
+		vertexInputState.pVertexBindingDescriptions = &m_VertexBuffer->GetVertexInputRef();
 		vertexInputState.vertexAttributeDescriptionCount = m_VertexBuffer->GetVertexAttributes().size();
 		vertexInputState.pVertexAttributeDescriptions = m_VertexBuffer->GetVertexAttributes().data();
 

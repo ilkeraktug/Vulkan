@@ -64,5 +64,7 @@ namespace test
 		std::array<Drawable*, 1> objs;
 
 		VulkanUI* UI;
+
+		bool isInit = false;
 	};
 }

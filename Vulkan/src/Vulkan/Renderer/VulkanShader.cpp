@@ -23,6 +23,8 @@ VkPipelineShaderStageCreateInfo VulkanShader::GetShaderModule(const VkDevice& de
 
 std::string VulkanShader::ReadFile(const std::string& filepath)
 {
+	if(filepath.size() > 256)
+		return "none";
 	std::string source;
 
 	std::ifstream file(filepath, std::ios_base::binary | std::ios_base::ate);
@@ -37,8 +39,15 @@ std::string VulkanShader::ReadFile(const std::string& filepath)
 
 		file.close();
 	}
-	else
-		VK_ERROR("Can not open file {0}", filepath);
+	// else
+	// {
+	// 	std::string newFilepath = "C:\\dev\\Vulkan\\Vulkan\\" + filepath;
+	// 	VK_ERROR("newFilepath {0}", newFilepath);
+	// 	//VK_ERROR("Can not open file {0}", filepath);
+	// 	
+	// 	ReadFile(newFilepath);
+	// }
+
 
 	return source;
 

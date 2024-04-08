@@ -2,6 +2,7 @@
 **/bin/
 bin-int/**
 !vendor/premake/bin/
+vendor/ktx/bin-int/**
 
 #visual studio files
 .vs/**
@@ -10,3 +11,4 @@ bin-int/**
 **.vcxproj.filters
 **.vcxproj.user
 *.spv
+*.obj

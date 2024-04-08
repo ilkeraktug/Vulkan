@@ -4,14 +4,13 @@
 #include <variant>
 
 #include "Vulkan/Core/tools.h"
+#include "Vulkan/ImGui/VulkanUI.h"
 #include "Vulkan/Renderer/PerspectiveCamera.h"
 #include "Vulkan/Renderer/VulkanShader.h"
 
 namespace test
 {
 	double RTXBasic::cameraSpeed = 1.0;
-
-	static int ilkerGet() { return 5; }
 	
     RTXBasic::RTXBasic(VulkanCore* core)
     {
@@ -30,8 +29,10 @@ namespace test
     	createDescriptorSets();
     	buildCommandBuffers();
     	initSuccess = true;
-    	
-    	glfwSetScrollCallback(static_cast<GLFWwindow*>(Window::GetWindow()), &RTXBasic::onMouseScrollMoved);
+
+		m_VulkanUI = std::make_unique<VulkanUI>(core);
+		m_VulkanUI->OnUpdate();
+    	//glfwSetScrollCallback(static_cast<GLFWwindow*>(Window::GetWindow()), &RTXBasic::onMouseScrollMoved);
     }
 
     RTXBasic::~RTXBasic()
@@ -40,83 +41,98 @@ namespace test
 
     void RTXBasic::OnUpdate(float deltaTime)
     {
-		if ((glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-			glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS))
-		{
-			keys.shift = true;
-		}
-		if ((glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE ||
-				glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_RIGHT_SHIFT) == GLFW_RELEASE))
-		{
-			keys.shift = false;
-		}
+		m_Camera->OnUpdate(deltaTime);
 		
-		if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_W) == GLFW_PRESS)
+		int count;
+		auto a = glfwGetJoystickButtons(0, &count);
+		for(int i = 0; i < count; i++)
 		{
-			glm::vec3 cameraCurrentPosition = m_Camera->getPosition();
-			m_Camera->setPosition(cameraCurrentPosition + m_Camera->getForwardVector() * deltaTime * (float)cameraSpeed);
+			VK_INFO("I{0}, Pressed{1}", i, a[i]);
 		}
-		else if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_S) == GLFW_PRESS)
-		{
-			glm::vec3 cameraCurrentPosition = m_Camera->getPosition();
-			m_Camera->setPosition(cameraCurrentPosition + -m_Camera->getForwardVector() * deltaTime * (float)cameraSpeed);
-		}
-		if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_A) == GLFW_PRESS)
-		{
-			glm::vec3 cameraCurrentPosition = m_Camera->getPosition();
-			m_Camera->setPosition(cameraCurrentPosition + -m_Camera->getRightVector() * deltaTime * (float)cameraSpeed);
-		}
-		else if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_D) == GLFW_PRESS)
-		{
-			glm::vec3 cameraCurrentPosition = m_Camera->getPosition();
-			m_Camera->setPosition(cameraCurrentPosition + m_Camera->getRightVector() * deltaTime * (float)cameraSpeed);
-		}
-		
-		if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
-		{
-			mouseButtons.left = true;
-		}
-		if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
-		{
-			mouseButtons.right = true;
-		}
-		if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_3) == GLFW_PRESS)
-		{
-			mouseButtons.middle = true;
-		}
-
-		if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE)
-		{
-			mouseButtons.left = false;
-		}
-		if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
-		{
-			mouseButtons.right = false;
-		}
-		if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_3) == GLFW_RELEASE)
-		{
-			mouseButtons.middle = false;
-		}
-
-		//VK_INFO("Mouse1{0}, Mouse2{1}, Mouse3{2}", mouseButtons.left, mouseButtons.middle, mouseButtons.right);
-
-		double x, y;
-		glfwGetCursorPos(static_cast<GLFWwindow*>(Window::GetWindow()), &x, &y);
-		
-		double dx = mousePos.x - x;
-		double dy = mousePos.y - y;
-
-		mousePos.x = x;
-		mousePos.y = y;
-
-		if(mouseButtons.left)
-		{
-			m_Camera->addRotation(glm::vec3( dy, -dx, 0));
-		}
-		if (mouseButtons.middle)
-		{
-			m_Camera->addPosition(glm::vec3(-dx * 0.005f, -dy * 0.005f, 0.0f));
-		}
+		//VK_INFO("----------------------");
+		//
+		//auto b = glfwGetJoystickAxes(0, &count);
+		//for(int i = 0; i < count; i++)
+		//{
+		//	VK_INFO("I{0}, Axis{1}", i, b[i]);
+		//}
+		//VK_INFO("----------------------");
+		// 	glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS))
+		// {
+		// 	keys.shift = true;
+		// }
+		// if ((glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE ||
+		// 		glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_RIGHT_SHIFT) == GLFW_RELEASE))
+		// {
+		// 	keys.shift = false;
+		// }
+		//
+		// if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_W) == GLFW_PRESS)
+		// {
+		// 	glm::vec3 cameraCurrentPosition = m_Camera->getPosition();
+		// 	m_Camera->setPosition(cameraCurrentPosition + m_Camera->getForwardVector() * deltaTime * (float)cameraSpeed);
+		// }
+		// else if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_S) == GLFW_PRESS)
+		// {
+		// 	glm::vec3 cameraCurrentPosition = m_Camera->getPosition();
+		// 	m_Camera->setPosition(cameraCurrentPosition + -m_Camera->getForwardVector() * deltaTime * (float)cameraSpeed);
+		// }
+		// if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_A) == GLFW_PRESS)
+		// {
+		// 	glm::vec3 cameraCurrentPosition = m_Camera->getPosition();
+		// 	m_Camera->setPosition(cameraCurrentPosition + -m_Camera->getRightVector() * deltaTime * (float)cameraSpeed);
+		// }
+		// else if (glfwGetKey(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_KEY_D) == GLFW_PRESS)
+		// {
+		// 	glm::vec3 cameraCurrentPosition = m_Camera->getPosition();
+		// 	m_Camera->setPosition(cameraCurrentPosition + m_Camera->getRightVector() * deltaTime * (float)cameraSpeed);
+		// }
+		//
+		// if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_1) == GLFW_PRESS)
+		// {
+		// 	mouseButtons.left = true;
+		// }
+		// if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+		// {
+		// 	mouseButtons.right = true;
+		// }
+		// if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_3) == GLFW_PRESS)
+		// {
+		// 	mouseButtons.middle = true;
+		// }
+		//
+		// if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE)
+		// {
+		// 	mouseButtons.left = false;
+		// }
+		// if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
+		// {
+		// 	mouseButtons.right = false;
+		// }
+		// if (glfwGetMouseButton(static_cast<GLFWwindow*>(Window::GetWindow()), GLFW_MOUSE_BUTTON_3) == GLFW_RELEASE)
+		// {
+		// 	mouseButtons.middle = false;
+		// }
+		//
+		// //VK_INFO("Mouse1{0}, Mouse2{1}, Mouse3{2}", mouseButtons.left, mouseButtons.middle, mouseButtons.right);
+		//
+		// double x, y;
+		// glfwGetCursorPos(static_cast<GLFWwindow*>(Window::GetWindow()), &x, &y);
+		//
+		// double dx = mousePos.x - x;
+		// double dy = mousePos.y - y;
+		//
+		// mousePos.x = x;
+		// mousePos.y = y;
+		//
+		// if(mouseButtons.left)
+		// {
+		// 	m_Camera->addRotation(glm::vec3( dy, -dx, 0));
+		// }
+		// if (mouseButtons.middle)
+		// {
+		// 	m_Camera->addPosition(glm::vec3(-dx * 0.005f, -dy * 0.005f, 0.0f));
+		// }
     	
 		updateUniformBuffers();
     }
@@ -145,6 +161,15 @@ namespace test
 
     void RTXBasic::OnImGuiRender()
     {
+		// ImGuiIO& io = ImGui::GetIO();
+		// io.DisplaySize = ImVec2(m_Core->swapchain.extent.width, m_Core->swapchain.extent.height);
+		//
+		// static bool show = true;
+		// ImGui::ShowDemoWindow(&show);
+		//
+		// ImGui::Render();
+		//
+		// m_VulkanUI->OnUpdate();
     }
 
     void RTXBasic::windowResized()
@@ -162,19 +187,19 @@ namespace test
 
     void RTXBasic::prepareStructureProperties()
     {
-        rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-        
-        VkPhysicalDeviceProperties2 deviceProperties2{};
-        deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        deviceProperties2.pNext = &rayTracingPipelineProperties;
-
-        vkGetPhysicalDeviceProperties2(m_Core->GetPhysicalDevice(), &deviceProperties2);
-
-        accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-        VkPhysicalDeviceFeatures2 deviceFeatures2{};
-        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-        deviceFeatures2.pNext = &accelerationStructureFeatures;
-        vkGetPhysicalDeviceFeatures2(m_Core->GetPhysicalDevice(), &deviceFeatures2);
+		rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+		
+		VkPhysicalDeviceProperties2 deviceProperties2{};
+		deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+		deviceProperties2.pNext = &rayTracingPipelineProperties;
+		
+		vkGetPhysicalDeviceProperties2(m_Core->GetPhysicalDevice(), &deviceProperties2);
+		
+		accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+		VkPhysicalDeviceFeatures2 deviceFeatures2{};
+		deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		deviceFeatures2.pNext = &accelerationStructureFeatures;
+		vkGetPhysicalDeviceFeatures2(m_Core->GetPhysicalDevice(), &deviceFeatures2);
         
         vkGetBufferDeviceAddressKHR = reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vkGetDeviceProcAddr(m_Core->GetDevice(), "vkGetBufferDeviceAddressKHR"));
         vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(m_Core->GetDevice(), "vkCmdBuildAccelerationStructuresKHR"));
@@ -550,12 +575,12 @@ namespace test
 		GetModuleFileName( NULL, workDirectory, MAX_PATH );
 		char* cwd = _getcwd( 0, 0 ) ; // **** microsoft specific ****
 		std::string working_directory(cwd) ;
-		std::free(cwd) ;
+		std::free(cwd);
 		
-		std::cout << "Work Directory " << workDirectory;
+		VK_INFO("Work Directory {0}", working_directory);
     	// Ray generation group
     	{
-    		shaderStages.emplace_back(VulkanShader::GetShaderModule(*m_Core, "assets/shaders/raytracingbasic/raygen.rgen.spv", VK_SHADER_STAGE_RAYGEN_BIT_KHR));
+    		shaderStages.emplace_back(VulkanShader::GetShaderModule(*m_Core, "C:/dev/Vulkan/Vulkan/assets/shaders/raytracingbasic/raygen.rgen.spv", VK_SHADER_STAGE_RAYGEN_BIT_KHR));
 
     		VkRayTracingShaderGroupCreateInfoKHR shaderGroup{};
     		shaderGroup.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -569,7 +594,7 @@ namespace test
 
     	// Miss group
     	{
-    		shaderStages.emplace_back(VulkanShader::GetShaderModule(*m_Core, "assets/shaders/raytracingbasic/miss.rmiss.spv", VK_SHADER_STAGE_MISS_BIT_KHR));
+    		shaderStages.emplace_back(VulkanShader::GetShaderModule(*m_Core, "C:/dev/Vulkan/Vulkan/assets/shaders/raytracingbasic/miss.rmiss.spv", VK_SHADER_STAGE_MISS_BIT_KHR));
     		VkRayTracingShaderGroupCreateInfoKHR shaderGroup{};
     		shaderGroup.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
     		shaderGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
@@ -582,7 +607,7 @@ namespace test
     	
     	// Closest hit group
     	{
-    		shaderStages.emplace_back(VulkanShader::GetShaderModule(*m_Core, "assets/shaders/raytracingbasic/closesthit.rchit.spv", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR));
+    		shaderStages.emplace_back(VulkanShader::GetShaderModule(*m_Core, "C:/dev/Vulkan/Vulkan/assets/shaders/raytracingbasic/closesthit.rchit.spv", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR));
 		    
     		VkRayTracingShaderGroupCreateInfoKHR shaderGroup{};
     		shaderGroup.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
@@ -793,9 +818,37 @@ namespace test
 				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 				VK_IMAGE_LAYOUT_GENERAL,
 				subresourceRange);
-
+			
 			VK_CHECK(vkEndCommandBuffer(m_Core->resources.drawCmdBuffers[i]));
 		}
+
+
+		// VkCommandBufferBeginInfo cmdBufferBI = init::commandBufferBeginInfo();
+		//
+		// VkClearValue clearValues[2];
+		// clearValues[0].color = { 0.3f, 0.5f, 0.8f, 1.0f };
+		// clearValues[1].depthStencil = { 1.0f, 0 };
+		//
+		// VkRenderPassBeginInfo renderPassBI = init::renderPassBeginInfo();
+		// renderPassBI.clearValueCount = 2;
+		// renderPassBI.pClearValues = clearValues;
+		// renderPassBI.renderArea.extent = m_Core->swapchain.extent;
+		// renderPassBI.renderArea.offset = { 0, 0 };
+		// renderPassBI.renderPass = m_Core->resources.renderPass;
+		//
+		// for (int32_t i = 0; i < m_Core->resources.drawCmdBuffers.size(); ++i)
+		// {
+		// 	renderPassBI.framebuffer = m_Core->resources.frameBuffers[i];
+		// 	VK_CHECK(vkBeginCommandBuffer(m_Core->resources.drawCmdBuffers[i], &cmdBufferBI));
+		//
+		// 	vkCmdBeginRenderPass(m_Core->resources.drawCmdBuffers[i], &renderPassBI, VK_SUBPASS_CONTENTS_INLINE);
+		//
+		// 	m_VulkanUI->draw(m_Core->resources.drawCmdBuffers[i]);
+		//
+		// 	vkCmdEndRenderPass(m_Core->resources.drawCmdBuffers[i]);
+		// 	VK_CHECK(vkEndCommandBuffer(m_Core->resources.drawCmdBuffers[i]));
+		//
+		// }
     }
 
     void RTXBasic::updateUniformBuffers()

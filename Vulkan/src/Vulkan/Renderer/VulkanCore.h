@@ -17,6 +17,10 @@
 
 #define DEFAULT_FENCE_TIMEOUT 100000000000
 
+//#define VK_PFN_DECLARE(fn) PFN_##fn fn = VK_NULL_HANDLE
+#define VK_PFN_IMPLEMENT(device, fn) vkPFN::##fn = reinterpret_cast<PFN_##fn>(vkGetDeviceProcAddr(device, #fn))
+
+class RTXBuilder;
 struct VulkanBuffer;
 struct VK_VulkanBuffer;
 
@@ -26,7 +30,7 @@ public:
 	VulkanCore();
 	VulkanCore(std::vector<const char*> enabledDeviceExtensions);
 	VulkanCore(std::vector<const char*> enabledDeviceExtensions, void* pNextEnableFeatures);
-	~VulkanCore();
+	virtual ~VulkanCore();
 
 	void enableDeviceExtension(const std::vector<const char*>& extensionList);
 
@@ -48,16 +52,20 @@ public:
 	VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin);
 	VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin);
 	VkCommandBuffer createCopyCommandBuffer(VkCommandBufferLevel level, bool begin);
+	VkCommandBuffer createComputeCommandBuffer(VkCommandBufferLevel level, bool begin);
 
 	void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, VkCommandPool pool, bool free = true);
 	void flushCopyCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
+	void flushComputeCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
 	void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
 
 	VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, VkBuffer *buffer, VkDeviceMemory *memory, void *data = nullptr);
 	VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VulkanBuffer *buffer, VkDeviceSize size, void *data = nullptr);
 
-	operator VkDevice() const { return m_Device; }
+	operator const VkDevice() const { return m_Device; }
 	operator VkDevice&() { return m_Device; }
+
+	std::shared_ptr<RTXBuilder> GetRTXBuilder() const { return m_RTXBuilder; }
 	
 	struct
 	{
@@ -92,6 +100,7 @@ public:
 	{
 		VkCommandPool commandPool;
 		VkCommandPool copyCommandPool;
+		VkCommandPool computeCommandPool;
 		std::vector<VkCommandBuffer> drawCmdBuffers;
 		std::vector<VkFramebuffer> frameBuffers;
 
@@ -127,6 +136,8 @@ public:
 		VkCommandBuffer cmdBuffer = VK_NULL_HANDLE;
 	}imgui;
 
+	std::shared_ptr<RTXBuilder> m_RTXBuilder;
+
 	void BeginScene();
 	//VkResult acquireNextImage(uint32_t* imageIndex);
 	VkResult Submit();
@@ -135,6 +146,7 @@ public:
 
 	virtual void getEnabledFutures() {}
 private:
+	void getRTXFunctionPtrs();
 	void createInstance();
 	void createPhysicalDevice();
 	void createLogicalDevice();
@@ -148,6 +160,8 @@ private:
 	void createSyncObjs();
 
 	void initImGui();
+
+	void createDependencies();
 
 	void checkEnabledDeviceFeatures(std::vector<const char*> enabledDeviceExtensions);
 

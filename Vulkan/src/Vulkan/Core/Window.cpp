@@ -5,6 +5,11 @@
 
 GLFWwindow* Window::m_Window = nullptr;
 
+static void GLFWErrorCallback(int error_code, const char* description)
+{
+	VK_CORE_ERROR("GLFW Error Code ({0}) : {1}", error_code, description);
+}
+
 Window::Window(const WindowProps& windowProp)
 {
 	Init(windowProp);
@@ -42,6 +47,8 @@ void Window::Init(const WindowProps& windowProp)
 		windowProp.Width,
 		windowProp.Height);
 
+	glfwSetErrorCallback(GLFWErrorCallback);
+	
 	glfwSetWindowUserPointer(m_Window, &m_WindowData);
 
 	glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
@@ -50,6 +57,18 @@ void Window::Init(const WindowProps& windowProp)
 		data.Width = width;
 		data.Height = height;
 
+	});
+
+	glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xScroll, double yScroll)
+	{
+		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		MouseScrollEvent e(xScroll, yScroll);
+		//VK_INFO("{0}", e.ToString());
+		for(auto& callback : data.callbacks)
+		{
+			callback(e);
+		}
+	
 	});
 }
 

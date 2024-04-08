@@ -7,6 +7,7 @@
 #include "Vulkan/Renderer/Abstract/VK_VulkanBuffer.h"
 #include "Vulkan/tests/Test.h"
 
+class VulkanUI;
 class Camera;
 
 struct RayTracingScratchBuffer
@@ -31,7 +32,7 @@ namespace test
     public:
         RTXBasic() = default;
         RTXBasic(VulkanCore* core);
-        ~RTXBasic();
+        virtual ~RTXBasic();
 
         virtual void OnUpdate(float deltaTime) override;
         virtual void OnRender() override;
@@ -184,6 +185,8 @@ namespace test
         VkDescriptorPool descriptorPool;
 
         bool initSuccess = false;
+
+        std::unique_ptr<VulkanUI> m_VulkanUI;
 
         static double cameraSpeed;
 

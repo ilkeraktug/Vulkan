@@ -1,0 +1,75 @@
+
+RaytracingAccelerationStructure rs : register(t0);
+RWTexture2D<float4> image : register(u1);
+
+struct CameraProps
+{
+    float4x4 viewInverse;
+    float4x4 projInverse;
+    float4 lightPos;
+};
+
+cbuffer cam : register(b2) { CameraProps camProps; };
+
+struct RayPayload
+{
+    float3 color;
+    float distance;
+    float3 normal;
+    float reflector;
+    uint2 id;
+};
+
+[[vk::constant_id(0)]] const int MAX_RECURSION = 0;
+
+[shader("raygeneration")]
+void main()
+{
+    uint3 LaunchID = DispatchRaysIndex();
+    uint3 LaunchSize = DispatchRaysDimensions();
+    
+    float2 pixelCenter = LaunchID.xy + float2(0.5f, 0.5f);
+    float2 uv = pixelCenter / LaunchSize.xy;
+    float2 d = uv * 2.0 - 1.0f;
+    float4 viewSpacePixelCoord = mul(camProps.projInverse, float4(d.x, d.y, 1.0f, 1.0f));
+    
+    float4 rayOriginWS = mul(camProps.viewInverse, float4(0.0f, 0.0f, 0.0f, 1.0f));
+    float4 targetWS = mul(camProps.viewInverse, float4(normalize(viewSpacePixelCoord.xyz), 1.0f));
+    float3 directionWS = normalize(targetWS.xyz - rayOriginWS.xyz);
+    
+    RayDesc rayDesc;
+    rayDesc.Origin = rayOriginWS.xyz;
+    rayDesc.Direction = directionWS.xyz;
+    rayDesc.TMin = 0.1;
+    rayDesc.TMax = 100000;
+    
+    float3 color = float3(0.0, 0.0, 0.0);
+            
+    for(int i = 0; i < MAX_RECURSION; i++)
+    {
+        RayPayload payload;
+        payload.id = LaunchID.xy;
+        TraceRay(rs, RAY_FLAG_FORCE_OPAQUE, 0xFF, 0, 0, 0, rayDesc, payload);
+        float3 hitColor = payload.color;
+        
+        if(payload.distance < 0.0f)
+        {
+            color += hitColor;
+            break;
+        }
+        else if(payload.reflector == 1.0f)
+        {
+            const float3 hitPosition = rayDesc.Origin + rayDesc.Direction * payload.distance;
+            rayDesc.Origin = hitPosition + payload.normal * 0.001f;
+            rayDesc.Direction = normalize(reflect(rayDesc.Direction, payload.normal));
+        }
+        else
+        {
+            color += hitColor;
+            break;
+        }
+    }
+    
+    image[int2(LaunchID.xy)] = float4(color.xyz, 1.0f);
+    
+}

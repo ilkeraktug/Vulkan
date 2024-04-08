@@ -1,0 +1,14 @@
+﻿#include "pch.h"
+#include "VulkanFunctions.h"
+
+
+PFN_vkGetBufferDeviceAddressKHR vkPFN::vkGetBufferDeviceAddressKHR = nullptr;
+PFN_vkCreateAccelerationStructureKHR vkPFN::vkCreateAccelerationStructureKHR = nullptr;
+PFN_vkDestroyAccelerationStructureKHR vkPFN::vkDestroyAccelerationStructureKHR = nullptr;
+PFN_vkGetAccelerationStructureDeviceAddressKHR vkPFN::vkGetAccelerationStructureDeviceAddressKHR = nullptr;
+PFN_vkGetAccelerationStructureBuildSizesKHR vkPFN::vkGetAccelerationStructureBuildSizesKHR = nullptr;
+PFN_vkCmdBuildAccelerationStructuresKHR vkPFN::vkCmdBuildAccelerationStructuresKHR = nullptr;
+PFN_vkBuildAccelerationStructuresKHR vkPFN::vkBuildAccelerationStructuresKHR = nullptr;
+PFN_vkCmdTraceRaysKHR vkPFN::vkCmdTraceRaysKHR = nullptr;
+PFN_vkGetRayTracingShaderGroupHandlesKHR vkPFN::vkGetRayTracingShaderGroupHandlesKHR = nullptr;
+PFN_vkCreateRayTracingPipelinesKHR vkPFN::vkCreateRayTracingPipelinesKHR = nullptr;

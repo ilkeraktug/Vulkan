@@ -12,6 +12,9 @@ public:
 
     virtual ~Camera() = default;
     
+    virtual void OnUpdate(float deltaTime) = 0;
+    virtual void OnUIUpdate(float deltaTime) = 0;
+    
     void setPosition(const glm::vec3& position)
     {
         m_Position = position;
@@ -47,7 +50,7 @@ public:
     const glm::mat4& getProjectionMatrix() const { return m_ProjectionMatrix; }
     const glm::mat4& getViewProjectionMatrix() const { return m_ViewProjectionMatrix; }
 
-    VkDescriptorSet descriptorSet;
+    VkDescriptorSet descriptorSet{};
 
 public:
     std::unique_ptr<VulkanUniformBuffer> MatricesBuffer;
@@ -102,5 +105,6 @@ protected:
     glm::vec3 m_RightVector = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 m_UpVector    = glm::vec3(0.0f, 0.0f, 1.0f);
 
+    float m_CameraVelocityScale = 1.0f;
 private:
 };

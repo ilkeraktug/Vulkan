@@ -2,6 +2,8 @@
 
 #include <glfw\glfw3.h>
 
+#include "Events/Event.h"
+
 struct WindowProps
 {
 	std::string Name;
@@ -14,6 +16,8 @@ struct WindowProps
 
 class Window
 {
+	using EventCallbackFn = std::function<bool(Event&)>;
+
 public:
 	Window(const WindowProps& windowProp = WindowProps());
 	~Window();
@@ -28,6 +32,8 @@ public:
 
 	inline static void* GetWindow() { return m_Window; }
 
+	void SetCallback(const EventCallbackFn& fn) { m_WindowData.callbacks.emplace_back(fn); }
+
 private:
 	void Init(const WindowProps& windowProp);
 	void Shutdown();
@@ -39,6 +45,7 @@ private:
 		std::string Name;
 		uint32_t Width, Height;
 		bool IsVsync;
+		std::vector<EventCallbackFn> callbacks;
 	};
 
 	WindowData m_WindowData;

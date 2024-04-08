@@ -59,7 +59,15 @@ void VulkanUI::OnUpdate()
 	int indexOffset = 0;
 
 	VkBufferCreateInfo vertexBufferCI = init::createBufferInfo(vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	if(vertexBuffer != VK_NULL_HANDLE)
+	{
+		vkDestroyBuffer(m_Core->GetDevice(), vertexBuffer, nullptr);
 
+		if(vertexBufferMemory != VK_NULL_HANDLE)
+		{
+			vkFreeMemory(m_Core->GetDevice(), vertexBufferMemory, nullptr);
+		}
+	}
 	VK_CHECK(vkCreateBuffer(m_Core->GetDevice(), &vertexBufferCI, nullptr, &vertexBuffer));
 
 	VkMemoryRequirements memReqs;
@@ -77,11 +85,18 @@ void VulkanUI::OnUpdate()
 	vkMapMemory(m_Core->GetDevice(), vertexBufferMemory, 0, vertexBufferSize, 0, &data);
 	ImDrawVert* vtxDst = (ImDrawVert*)data;
 
-
-
-
-
+	
 	VkBufferCreateInfo indexBufferCI = init::createBufferInfo(indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+	if(indexBuffer != VK_NULL_HANDLE)
+	{
+		vkDestroyBuffer(m_Core->GetDevice(), indexBuffer, nullptr);
+			
+		if(indexBufferMemory != VK_NULL_HANDLE)
+		{
+			vkFreeMemory(m_Core->GetDevice(), indexBufferMemory, nullptr);
+		}
+	}
 
 	VK_CHECK(vkCreateBuffer(m_Core->GetDevice(), &indexBufferCI, nullptr, &indexBuffer));
 
@@ -112,7 +127,7 @@ void VulkanUI::OnUpdate()
 
 	vkUnmapMemory(m_Core->GetDevice(), vertexBufferMemory);
 	vkUnmapMemory(m_Core->GetDevice(), indexBufferMemory);
-
+	
 	if (m_IndexCount != imDrawData->TotalIdxCount || firstTimeIndex)
 	{
 		//m_IndexBuffer.reset(new VulkanIndexBuffer(imIndexBuffer.data(), imIndexBuffer.size(), m_Core));
@@ -208,9 +223,10 @@ void VulkanUI::prepareDescriptor()
 	descriptorSetAI.descriptorSetCount = 1;
 	descriptorSetAI.pSetLayouts = &m_DescriptorSetLayout;
 
+	VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &descriptorSetAI, &m_DescriptorSet));
+
 	for (int i = 0; i < 3; i++)
 	{
-		VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &descriptorSetAI, &m_DescriptorSet));
 
 		VkWriteDescriptorSet writeDescriptorSet{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		writeDescriptorSet.dstSet = m_DescriptorSet;
@@ -270,8 +286,8 @@ void VulkanUI::preparePipeline()
 	VK_CHECK(vkCreatePipelineLayout(m_Core->GetDevice(), &pipelineLayoutCI, nullptr, &m_PipelineLayout));
 
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
-		VulkanShader::GetShaderModule(m_Core->GetDevice(), "assets/shaders/ui/uioverlayVert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-		VulkanShader::GetShaderModule(m_Core->GetDevice(), "assets/shaders/ui/uioverlayFrag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+		VulkanShader::GetShaderModule(m_Core->GetDevice(), "C:/dev/Vulkan/Vulkan/assets/shaders/ui/uioverlayVert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+		VulkanShader::GetShaderModule(m_Core->GetDevice(), "C:/dev/Vulkan/Vulkan/assets/shaders/ui/uioverlayFrag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
 	};
 
 	VkVertexInputBindingDescription vertexInputBinding{};

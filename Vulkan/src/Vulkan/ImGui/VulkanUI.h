@@ -35,10 +35,10 @@ private:
 
 	std::unique_ptr<VulkanVertexBuffer> m_VertexBuffer;
 	int m_VertexCount;
-	VkBuffer vertexBuffer;
-	VkBuffer indexBuffer;
-	VkDeviceMemory vertexBufferMemory;
-	VkDeviceMemory indexBufferMemory;
+	VkBuffer vertexBuffer = VK_NULL_HANDLE;
+	VkBuffer indexBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
+	VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
 	std::unique_ptr<VulkanIndexBuffer> m_IndexBuffer;
 	int m_IndexCount;
 	bool firstTimeVertex = true;
@@ -54,5 +54,7 @@ private:
 	VkPipeline m_GraphicsPipeline;
 
 	VertexBufferLayout m_BufferLayout;
-	std::string fontPath = "assets/fonts/Roboto-Medium.ttf";
+	std::string fontPath = "C:/dev/Vulkan/Vulkan/assets/fonts/Roboto-Medium.ttf";
+
+	bool isInit = false;
 };

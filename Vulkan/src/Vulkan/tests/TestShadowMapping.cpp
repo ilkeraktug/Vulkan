@@ -349,7 +349,7 @@ namespace test {
 		updateDescriptorSet.dstBinding = 0;
 		updateDescriptorSet.descriptorCount = 1;
 		updateDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		updateDescriptorSet.pBufferInfo = &uniformBuffer.Light->GetBufferInfo();
+		updateDescriptorSet.pBufferInfo = &uniformBuffer.Light->GetBufferInfoRef();
 
 		writeDescriptorSets = {updateDescriptorSet};
 		
@@ -362,7 +362,7 @@ namespace test {
 		updateDescriptorSet.dstBinding = 0;
 		updateDescriptorSet.descriptorCount = 1;
 		updateDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		updateDescriptorSet.pBufferInfo = &uniformBuffer.Scene->GetBufferInfo();
+		updateDescriptorSet.pBufferInfo = &uniformBuffer.Scene->GetBufferInfoRef();
 
 		updateDescriptorSet1.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		updateDescriptorSet1.dstSet = descriptorSets.Scene;
@@ -388,7 +388,7 @@ namespace test {
 
 		VkPipelineVertexInputStateCreateInfo vertexInputState = init::pipelineVertexInputState();
 		vertexInputState.vertexBindingDescriptionCount = 1;
-		vertexInputState.pVertexBindingDescriptions = &m_LightVertexBuffer->GetVertexInput();
+		vertexInputState.pVertexBindingDescriptions = &m_LightVertexBuffer->GetVertexInputRef();
 		vertexInputState.vertexAttributeDescriptionCount = m_LightVertexBuffer->GetVertexAttributes().size();
 		vertexInputState.pVertexAttributeDescriptions = m_LightVertexBuffer->GetVertexAttributes().data();
 
