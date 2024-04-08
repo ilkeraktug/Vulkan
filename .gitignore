@@ -2,7 +2,7 @@
 **/bin/
 bin-int/**
 !vendor/premake/bin/
-vendor/ktx/bin-int/**
+vulkan/vendor/ktx/bin-int/**
 
 #visual studio files
 .vs/**
