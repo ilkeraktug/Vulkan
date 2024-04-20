@@ -12,6 +12,7 @@
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_vulkan.h"
+#include "V2/VulkanImage2D.h"
 
 #define VK_FLAGS_NONE 0
 
@@ -22,7 +23,7 @@
 
 class RTXBuilder;
 struct VulkanBuffer;
-struct VK_VulkanBuffer;
+class VK_VulkanBuffer;
 
 class VulkanCore
 {
@@ -109,6 +110,8 @@ public:
 		VkPipelineStageFlags waitDstMask[1] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
 		uint32_t imageIndex;
+
+		std::unique_ptr<V2::VulkanImage2D> RTXOutputImage;
 
 	}resources;
 	

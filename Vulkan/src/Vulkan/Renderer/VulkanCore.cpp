@@ -785,6 +785,13 @@ void VulkanCore::createSwapchain()
 
 		VK_CHECK(vkCreateImageView(m_Device, &imageViewCI, nullptr, &swapchain.imageViews[i]));
 	}
+
+	resources.RTXOutputImage = std::make_unique<V2::VulkanImage2D>();
+	resources.RTXOutputImage->Init(EInit::CreateOnlyImage,
+		this,
+		swapchain.colorFormat, VkExtent3D{swapchain.extent.width, swapchain.extent.height, 1},
+		VK_IMAGE_USAGE_STORAGE_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
 void VulkanCore::createDepthStencilBuffer()
