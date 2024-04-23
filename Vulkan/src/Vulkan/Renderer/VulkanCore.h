@@ -129,6 +129,7 @@ public:
 		//VkFence fences[2];
 		VkSemaphore imageRendered;
 		VkSemaphore imageAvaible;
+		VkFence inFlightFence;
 	} sync;
 
 

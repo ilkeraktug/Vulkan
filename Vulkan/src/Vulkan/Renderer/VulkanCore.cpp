@@ -97,8 +97,8 @@ VulkanCore::~VulkanCore()
 	vkDestroySwapchainKHR(m_Device, swapchain.swapchainKHR, nullptr);
 	vkDestroySurfaceKHR(m_Instance, swapchain.surface, nullptr);
 
-	vkDestroyDevice(m_Device, nullptr);
-	vkDestroyInstance(m_Instance, nullptr);
+	//vkDestroyDevice(m_Device, nullptr);
+	//vkDestroyInstance(m_Instance, nullptr);
 }
 
 void VulkanCore::enableDeviceExtension(const std::vector<const char*>& extensionList)
@@ -479,8 +479,11 @@ void VulkanCore::createInstance()
 	instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
 	instanceCreateInfo.enabledLayerCount = 0;
 
+	std::vector<const char*> enabledLayerNames;
+	enabledLayerNames.emplace_back("VK_LAYER_LUNARG_api_dump ");
 #ifdef ENABLE_VALIDATION_LAYERS
 	const char* validationLayer = "VK_LAYER_KHRONOS_validation";
+	enabledLayerNames.emplace_back(validationLayer);
 	uint32_t layerCount;
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 	if (layerCount > 0)
@@ -488,6 +491,11 @@ void VulkanCore::createInstance()
 		std::vector<VkLayerProperties> layerProperties(layerCount);
 		vkEnumerateInstanceLayerProperties(&layerCount, layerProperties.data());
 
+		for (auto& layer : layerProperties)
+		{
+			VK_INFO("Layer{0}", layer.layerName);
+		}
+		
 		for (auto& layer : layerProperties)
 		{
 			if (strcmp(layer.layerName, validationLayer) == 0)
@@ -543,6 +551,7 @@ void VulkanCore::createPhysicalDevice()
 	vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &m_PhysicalDeviceMemoryProperties);
 
 	m_EnabledDeviceFeatures.samplerAnisotropy = VK_TRUE;
+	m_EnabledDeviceFeatures.shaderInt64 = VK_TRUE;
 
 	uint32_t queueCount;
 	vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueCount, nullptr);
@@ -787,10 +796,10 @@ void VulkanCore::createSwapchain()
 	}
 
 	resources.RTXOutputImage = std::make_unique<V2::VulkanImage2D>();
-	resources.RTXOutputImage->Init(EInit::CreateOnlyImage,
+	resources.RTXOutputImage->Init(EInit::CreateImageAndSampler,
 		this,
-		swapchain.colorFormat, VkExtent3D{swapchain.extent.width, swapchain.extent.height, 1},
-		VK_IMAGE_USAGE_STORAGE_BIT,
+		VK_FORMAT_R32G32B32A32_SFLOAT, VkExtent3D{swapchain.extent.width, swapchain.extent.height, 1},
+		VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
@@ -966,9 +975,14 @@ void VulkanCore::createFrameBuffer()
 void VulkanCore::createSyncObjs()
 {
 	VkSemaphoreCreateInfo semaphoreCreateInfo = init::semaphoreCreateInfo();
+	VkFenceCreateInfo fenceCI{};
+	fenceCI.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCI.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 	VK_CHECK(vkCreateSemaphore(m_Device, &semaphoreCreateInfo, nullptr, &sync.imageAvaible));
 	VK_CHECK(vkCreateSemaphore(m_Device, &semaphoreCreateInfo, nullptr, &sync.imageRendered));
+
+	VK_CHECK(vkCreateFence(m_Device, &fenceCI, nullptr, &sync.inFlightFence));
 
 	resources.submitInfo = init::submitInfo();
 	resources.submitInfo.waitSemaphoreCount = 1;

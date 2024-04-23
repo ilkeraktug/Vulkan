@@ -1,0 +1,47 @@
+RaytracingAccelerationStructure tlAS : register(t0);
+RWTexture2D<float4> OutputTexture : register(u1);
+
+struct CamProperties
+{
+    float4x4 invProjection;
+    float4x4 invView;
+};
+
+cbuffer camProps : register(b2)
+{
+    CamProperties camProps;
+};
+
+struct PayloadData
+{
+    float3 hitColor;
+};
+
+[shader("raygeneration")]
+void main()
+{
+    uint2 RayIndex = DispatchRaysIndex().xy;
+    uint2 RayDimensions = DispatchRaysDimensions().xy;
+    
+    float2 pixelCenter = RayIndex + float2(0.5f, 0.5f);
+    
+    float2 pixelCoordInUV = pixelCenter / RayDimensions;
+    float2 pixelCoordInNDC = pixelCoordInUV * 2.0f - 1.0f;
+    
+    float4 pixelCoordInViewSpace = mul(camProps.invProjection, float4(pixelCoordInNDC.xy, 1.0f, 1.0f)); 
+    float4 pixelCoordInWorldSpace = mul(camProps.invView, float4(pixelCoordInViewSpace.xyz, 0));
+    
+    float4 originInWorldSpace = mul(camProps.invView, float4(0.0f, 0.0f, 0.0f, 1.0f));
+    
+    PayloadData payload;
+    
+    RayDesc ray;
+    ray.Origin = originInWorldSpace.xyz;
+    ray.Direction = normalize(pixelCoordInWorldSpace.xyz);
+    ray.TMin = 0.001f;
+    ray.TMax = 1000000;
+    
+    TraceRay(tlAS, RAY_FLAG_NONE, 0xFF, 0, 0, 0, ray, payload);
+    
+    OutputTexture[RayIndex] = float4(payload.hitColor, 1.0f);
+}

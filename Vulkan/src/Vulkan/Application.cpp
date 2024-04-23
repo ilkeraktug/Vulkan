@@ -19,6 +19,7 @@
 #include "tests/RTX/Basic/RTXBasic.h"
 #include "tests/RTX/Reflection/RTXReflection.h"
 #include "tests/RTX/Shadow/RTXShadow.h"
+#include "tests/RTX/Texture/RTXTexture.h"
 
 Application::Application()
 {
@@ -61,7 +62,8 @@ Application::Application()
     m_VulkanCore.reset(new VulkanCore(enableExtension, &enabledRayQueryFeatures));
 
    // m_CurrentTest = new test::RTXBasic(m_VulkanCore.get());
-    m_CurrentTest = new test::RTXShadow(m_VulkanCore.get());
+    //m_CurrentTest = new test::RTXShadow(m_VulkanCore.get());
+    m_CurrentTest = new test::RTXTexture(m_VulkanCore.get());
     //m_CurrentTest = new test::RTXReflection(m_VulkanCore.get());
     //m_CurrentTest = new test::TestFlappyBird(m_VulkanCore.get());
     //m_CurrentTest = new test::TestImGui(m_VulkanCore.get());

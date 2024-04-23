@@ -20,8 +20,9 @@ namespace V2
     
         void init(VulkanCore* core, VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, void* data);
 
-        VkBuffer GetHandle() const { return m_Handle; }
+        const VkBuffer& GetHandle() const { return m_Handle; }
         VkDeviceMemory GetMemory() const { return m_DeviceMemory; }
+        const VkDescriptorBufferInfo& GetDescriptorInfo() const { return m_DescriptorInfo; }
 
     protected:
         VkMemoryAllocateFlagsInfo* m_MemoryAllocateFlagsInfo = nullptr;

@@ -69,7 +69,7 @@ void main(inout Payload io_Payload, in Fix attributes)
     float3 normalizedLightPos = normalize(float3(lightPos.xyz));
     float lightDot = max(dot(normalizedLightPos, normal), 0.2);
     //io_Payload.hitValue =   v0.position; //* lightDot;
-    io_Payload.hitValue = v0.color.rgb * lightDot;
+    io_Payload.hitValue = float3(PrimitiveID, PrimitiveID, PrimitiveID);//v0.color.rgb * lightDot;
 
     RayDesc rayDesc;
     rayDesc.Origin = hitLocation;
@@ -84,6 +84,6 @@ void main(inout Payload io_Payload, in Fix attributes)
     
     if(o_PlayloadShadow.shadowed)
     {
-        io_Payload.hitValue *= 0.3f;
+        io_Payload.hitValue *= 1.0f;
     }            
 }
