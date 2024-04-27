@@ -31,63 +31,8 @@ std::shared_ptr<V2::VulkanAccelerationStructure> RTXBuilder::buildBLAS(const vkg
 
     deviceAddressInfo.buffer = model.indices.buffer;
     modelDeviceAddresses.Index = vkGetBufferDeviceAddress(m_Core->GetDevice(), &deviceAddressInfo);
-
-    uint32_t triangleCount = model.indices.count / 3;
-
+    
     return buildBLAS(modelDeviceAddresses.Vertex, sizeof(vkglTF::Vertex), model.vertices.count, modelDeviceAddresses.Index, model.indices.count, 0);
-    
-    VkAccelerationStructureGeometryTrianglesDataKHR triangleData{};
-    triangleData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-    triangleData.vertexFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
-    triangleData.vertexData.deviceAddress = modelDeviceAddresses.Vertex;
-    triangleData.vertexStride = sizeof(vkglTF::Vertex);
-    triangleData.maxVertex = model.vertices.count;
-    triangleData.indexType = VK_INDEX_TYPE_UINT32;
-    triangleData.indexData.deviceAddress = modelDeviceAddresses.Index;
-
-    VkAccelerationStructureGeometryKHR geometryInfo{};
-    geometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-    geometryInfo.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-    geometryInfo.geometry.triangles = triangleData;
-    geometryInfo.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-
-    VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
-    buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-    buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-    buildGeometryInfo.geometryCount = 1;
-    buildGeometryInfo.pGeometries = &geometryInfo;
-
-    VkAccelerationStructureBuildSizesInfoKHR asBuildSizeInfo{};
-    asBuildSizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-    
-    vkPFN::vkGetAccelerationStructureBuildSizesKHR(m_Core->GetDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildGeometryInfo, &triangleCount, &asBuildSizeInfo);
-
-    V2::VulkanBufferDeviceAddress scratchBuffer(m_Core,
-        asBuildSizeInfo.buildScratchSize,
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    std::shared_ptr<V2::VulkanAccelerationStructure> blAS = std::make_shared<V2::VulkanAccelerationStructure>(m_Core, asBuildSizeInfo, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
-    
-    buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-    buildGeometryInfo.dstAccelerationStructure = blAS->GetHandle();
-    buildGeometryInfo.scratchData.deviceAddress = scratchBuffer.GetDeviceAddress();
-
-    VkAccelerationStructureBuildRangeInfoKHR asBuildRangeInfo{};
-    asBuildRangeInfo.primitiveCount = triangleCount;
-    asBuildRangeInfo.primitiveOffset = 0;
-    asBuildRangeInfo.firstVertex = 0;
-    asBuildRangeInfo.transformOffset = 0;
-
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR*> buildRangeInfos{ &asBuildRangeInfo };
-
-    VkCommandBuffer cmdBuffer = m_Core->createComputeCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-    
-    vkPFN::vkCmdBuildAccelerationStructuresKHR(cmdBuffer, 1, &buildGeometryInfo, buildRangeInfos.data());
-    m_Core->flushComputeCommandBuffer(cmdBuffer, m_Core->queue.ComputeQueue);
-    
-    return blAS;
 }
 
 std::shared_ptr<V2::VulkanAccelerationStructure> RTXBuilder::buildBLAS(V2::VulkanBufferDeviceAddress* vertexBuffer, VkDeviceSize vertexBufferStride, uint32_t maxVertex, V2::VulkanBufferDeviceAddress* indexBuffer, uint32_t indexCount, V2::VulkanBufferDeviceAddress* transformBuffer)
