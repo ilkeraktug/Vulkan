@@ -212,4 +212,30 @@ namespace init
 
 		return poolSize;
 	}
+
+	inline VkWriteDescriptorSet getBufferWrite(VkDescriptorSet descriptorSet, uint32_t binding, VkDescriptorType type, VkDescriptorBufferInfo* bufferInfo)
+	{
+		VkWriteDescriptorSet writeDescriptorSet{};
+		writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSet.dstSet = descriptorSet;
+		writeDescriptorSet.dstBinding = binding;
+		writeDescriptorSet.descriptorCount = 1;
+		writeDescriptorSet.descriptorType = type;
+		writeDescriptorSet.pBufferInfo = bufferInfo;
+
+		return writeDescriptorSet;
+	}
+
+	inline VkWriteDescriptorSet getImageWrite(VkDescriptorSet descriptorSet, uint32_t binding, VkDescriptorType type, VkDescriptorImageInfo* imageInfo)
+	{
+		VkWriteDescriptorSet writeDescriptorSet{};
+		writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSet.dstSet = descriptorSet;
+		writeDescriptorSet.dstBinding = binding;
+		writeDescriptorSet.descriptorCount = 1;
+		writeDescriptorSet.descriptorType = type;
+		writeDescriptorSet.pImageInfo = imageInfo;
+
+		return writeDescriptorSet;
+	}
 }

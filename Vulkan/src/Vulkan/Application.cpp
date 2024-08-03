@@ -14,6 +14,7 @@
 #include "tests/TestGraphicsPipeline.h"
 #include "tests/TestFlappyBird.h"
 #include "tests/TestImGui.h"
+#include "tests/TestRenderPass.h"
 #include "tests/TestShadow.h"
 #include "tests/TestShadowMapping.h"
 #include "tests/RTX/Basic/RTXBasic.h"
@@ -63,10 +64,11 @@ Application::Application()
 
    // m_CurrentTest = new test::RTXBasic(m_VulkanCore.get());
     //m_CurrentTest = new test::RTXShadow(m_VulkanCore.get());
-    m_CurrentTest = new test::RTXTexture(m_VulkanCore.get());
+    //m_CurrentTest = new test::RTXTexture(m_VulkanCore.get());
     //m_CurrentTest = new test::RTXReflection(m_VulkanCore.get());
     //m_CurrentTest = new test::TestFlappyBird(m_VulkanCore.get());
     //m_CurrentTest = new test::TestImGui(m_VulkanCore.get());
+    m_CurrentTest = new test::TestRenderPass(m_VulkanCore.get());
 
    // m_TestMenu = new test::TestMenu(m_CurrentTest);
    // m_TestMenu->PushMenu<test::TestFlappyBird>("TestFlappyBird");

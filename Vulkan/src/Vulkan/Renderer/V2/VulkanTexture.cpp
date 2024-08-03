@@ -97,7 +97,7 @@ namespace vks
 		VkMemoryRequirements memReqs;
 
 		// Use a separate command buffer for texture loading
-		VkCommandBuffer copyCmd = core->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+		VkCommandBuffer copyCmd = core->createCopyCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
 		if (useStaging)
 		{
@@ -212,7 +212,7 @@ namespace vks
 				imageLayout,
 				subresourceRange);
 
-			core->flushCommandBuffer(copyCmd, copyQueue);
+			core->flushCopyCommandBuffer(copyCmd, copyQueue);
 
 			// Clean up staging resources
 			vkFreeMemory(core->GetDevice(), stagingMemory, nullptr);

@@ -552,6 +552,9 @@ void VulkanCore::createPhysicalDevice()
 
 	m_EnabledDeviceFeatures.samplerAnisotropy = VK_TRUE;
 	m_EnabledDeviceFeatures.shaderInt64 = VK_TRUE;
+	m_EnabledDeviceFeatures.geometryShader = VK_TRUE;
+	m_EnabledDeviceFeatures.depthClamp = VK_TRUE;
+	m_EnabledDeviceFeatures.depthBiasClamp = VK_TRUE;
 
 	uint32_t queueCount;
 	vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueCount, nullptr);
