@@ -3,7 +3,7 @@
 
 VkPipelineShaderStageCreateInfo VulkanShader::GetShaderModule(const VkDevice& device, const std::string& shaderPath, VkShaderStageFlagBits stage)
 {
-	std::string shaderSource   = ReadFile(shaderPath);
+	std::string shaderSource = ReadFile(shaderPath);
 
 	VkShaderModule shaderModule;
 

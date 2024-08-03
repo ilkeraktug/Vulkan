@@ -43,6 +43,7 @@ public:
     const glm::vec3& getUpVector() const { return m_UpVector; }
 
     const glm::vec3& getPosition() const { return m_Position; }
+    const glm::vec3& getViewPosition() const { return m_ViewPosition; }
     const glm::vec3& getRotation() const { return m_Rotation; }
 
     const glm::mat4& getViewMatrix() const { return m_ViewMatrix; }

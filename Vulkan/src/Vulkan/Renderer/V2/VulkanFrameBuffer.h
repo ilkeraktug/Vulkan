@@ -13,7 +13,7 @@ struct FramebufferAttachment
 
     bool bIsColorAttachment;
     
-    uint32_t layer; 
+    uint32_t Layer; 
 };
 
 class VulkanFrameBuffer
@@ -21,7 +21,8 @@ class VulkanFrameBuffer
 public:
 
     VulkanFrameBuffer() = default;
-    VulkanFrameBuffer(VulkanCore* core) : m_Core(core) {}
+    VulkanFrameBuffer(VulkanCore* core);
+    ~VulkanFrameBuffer();
     
     void AddAttachment(VkFormat format, VkImageUsageFlags usage, uint32_t width, uint32_t height, uint32_t layer = 1);
     void Create();

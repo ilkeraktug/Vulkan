@@ -57,7 +57,7 @@ namespace test
 
         struct Scene
         {
-            VkFormat ColorFormat = VK_FORMAT_R8G8B8A8_UNORM;
+            VkFormat ColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
             VkFormat DepthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
             
             VkRenderPass renderPass;
@@ -139,10 +139,13 @@ namespace test
             glm::mat4 Projection;
             glm::vec4 InstancePos[3];
         } gBufferUniformBufferStructObject;
+
+        gBufferUniformBufferStruct soldiersUniformBufferObject;
         
         std::unique_ptr<V2::VulkanUniformBuffer2> gBufferUniformBuffer;
         std::unique_ptr<V2::VulkanUniformBuffer2> shadowUniformBuffer;
         std::unique_ptr<V2::VulkanUniformBuffer2> sceneUniformBuffer;
+        std::unique_ptr<V2::VulkanUniformBuffer2> soldiersUniformBuffer;
 
         float timer = 0.0f;
         // Multiplier for speeding up (or slowing down) the global timer

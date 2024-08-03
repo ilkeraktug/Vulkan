@@ -48,6 +48,7 @@ float shadowScale(float3 fragPos, int layer, float2 offset)
     
     if(depth < fragOnNDC.z)
     {
+        return 0.75f;
         return 0.25f;
     }
     
@@ -81,7 +82,7 @@ float filterPCF(float3 fragPos, int layer)
 
 float3 calculateColor(float3 color, float3 fragPos)
 {
-    if(ubo.debugShadow > 0)
+    if(ubo.debugShadow == 0)
     {
         for(int i = 0; i < 3; i++)
         {
@@ -98,6 +99,10 @@ float4 main(VSOutput input) : SV_TARGET
     float3 normal = NormalTexture.Sample(NormalTextureSampler, input.UV).rgb;
     float4 albedo = AlbedoTexture.Sample(AlbedoTextureSampler, input.UV);
     
+    float depth0 = ShadowMapArray.Sample(ShadowMapSampler, float3(input.UV, 0)).r;
+    float depth1 = ShadowMapArray.Sample(ShadowMapSampler, float3(input.UV, 1)).r;
+    float depth2 = ShadowMapArray.Sample(ShadowMapSampler, float3(input.UV, 2)).r;
+    
     float3 N = normalize(normal);
     float3 FragPosToViewDirection = normalize(ubo.viewPosition - fragPos);
     
@@ -111,7 +116,7 @@ float4 main(VSOutput input) : SV_TARGET
         float3 LightToFragDirection = normalize(LightToFrag);
         
         float LightInnerAngle = cos(radians(15.0f));
-        float LightOuterAngle = cos(radians(25.0f));
+        float LightOuterAngle = cos(radians(90.0f));
         float Range = 100.0f;
         
         float c1 = dot(LightToFragDirection, LightToTargetDirection);
@@ -132,5 +137,10 @@ float4 main(VSOutput input) : SV_TARGET
     
     fragColor = calculateColor(fragColor, fragPos);
     
+
     return float4(fragColor, 1.0f);
+    return float4(albedo * (depth0 + depth1 + depth2));
+    return float4((depth0 + depth1 + depth2), 0.0f, 0.0f, 1.0f);
+    //return float4(depth, 0.0f, 0.0f, 1.0f);
+    return float4(normal, 1.0f);
 }

@@ -4,11 +4,24 @@
 #include "Vulkan/Core/init.h"
 #include "Vulkan/Renderer/VulkanCore.h"
 
+VulkanFrameBuffer::VulkanFrameBuffer(VulkanCore* core)
+    : m_Core(core)
+{
+    
+}
+
+VulkanFrameBuffer::~VulkanFrameBuffer()
+{
+    vkDestroySampler(m_Core->GetDevice(), m_Sampler, nullptr);
+    vkDestroyRenderPass(m_Core->GetDevice(), m_RenderPass, nullptr);
+    vkDestroyFramebuffer(m_Core->GetDevice(), m_Framebuffer, nullptr);
+}
+
 void VulkanFrameBuffer::AddAttachment(VkFormat format, VkImageUsageFlags usage, uint32_t width, uint32_t height, uint32_t layer)
 {
     FramebufferAttachment& attachment = m_Attachments.emplace_back();
     attachment.Format = format;
-    attachment.layer = layer;
+    attachment.Layer = layer;
     
     m_Width = width;
     m_Height = height;
@@ -42,12 +55,12 @@ void VulkanFrameBuffer::AddAttachment(VkFormat format, VkImageUsageFlags usage, 
 
     if(usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
     {
-        aspectMask |= VK_IMAGE_ASPECT_COLOR_BIT;
+        aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         attachment.bIsColorAttachment = true;
     }
     if(usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
     {
-        aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT /*| VK_IMAGE_ASPECT_STENCIL_BIT*/;
     }
 
     VkImageSubresourceRange subresourceRange{};
@@ -106,9 +119,9 @@ void VulkanFrameBuffer::Create()
             pDepthStencilAttachment = new VkAttachmentReference{i, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
         }
 
-        if(m_Attachments[i].layer > maxLayer)
+        if(m_Attachments[i].Layer > maxLayer)
         {
-            maxLayer = m_Attachments[i].layer;
+            maxLayer = m_Attachments[i].Layer;
         }
 
         attachmentDescriptions.push_back(attachmentDescription);

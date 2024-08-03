@@ -1,9 +1,11 @@
 ﻿#include "pch.h"
 #include "GraphicsPipelineBuilder.h"
 
+GraphicsPipelineBuilder* GraphicsPipelineBuilder::s_Instance = new GraphicsPipelineBuilder();
+
 GraphicsPipelineBuilder::GraphicsPipelineBuilder()
 {
-    Reset();
+    Init();
 }
 
 void GraphicsPipelineBuilder::Init()
@@ -42,6 +44,16 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::Reset()
     return *this;
 }
 
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddShaderStage(VkPipelineShaderStageCreateInfo shaderStageCI)
+{
+    m_ShaderStage.Stages.emplace_back(shaderStageCI);
+
+    CI.stageCount = m_ShaderStage.Stages.size(); 
+    CI.pStages = m_ShaderStage.Stages.data();
+
+    return *this;
+}
+
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddShaderStage(const VkDevice& device, const std::string& shaderPath, VkShaderStageFlagBits stage)
 {
     m_ShaderStage.Stages.emplace_back(VulkanShader::GetShaderModule(device, shaderPath, stage));
@@ -55,7 +67,7 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddShaderStage(const VkDevice&
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddVertexInputState(uint32_t binding, std::initializer_list<vkglTF::VertexComponent> initList)
 {
     m_VertexInputStateData.BindingDescription.binding = binding;
-    m_VertexInputStateData.BindingDescription.stride = sizeof(vkglTF::VertexComponent);
+    m_VertexInputStateData.BindingDescription.stride = sizeof(vkglTF::Vertex);
     m_VertexInputStateData.BindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     uint32_t location = 0;
@@ -70,9 +82,21 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddVertexInputState(uint32_t b
         m_VertexInputStateData.AttributeDescriptions.emplace_back(desc);
     }
 
+    m_VertexInputStateData.CI.vertexBindingDescriptionCount = 1;
+    m_VertexInputStateData.CI.pVertexBindingDescriptions = &m_VertexInputStateData.BindingDescription;
     m_VertexInputStateData.CI.vertexAttributeDescriptionCount = m_VertexInputStateData.AttributeDescriptions.size();
     m_VertexInputStateData.CI.pVertexAttributeDescriptions = m_VertexInputStateData.AttributeDescriptions.data();
         
+    return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddEmptyVertexInputState()
+{
+    m_VertexInputStateData.CI.vertexBindingDescriptionCount = 0;
+    m_VertexInputStateData.CI.pVertexBindingDescriptions = nullptr;
+    m_VertexInputStateData.CI.vertexAttributeDescriptionCount = 0;
+    m_VertexInputStateData.CI.pVertexAttributeDescriptions = nullptr;
+    
     return *this;
 }
 
@@ -87,7 +111,7 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddInputAssemblyState(VkPrimit
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddRasterizationState(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace)
 {
     m_RasterizationState.CI.depthClampEnable = VK_FALSE;
-    m_RasterizationState.CI.rasterizerDiscardEnable = VK_TRUE;
+    m_RasterizationState.CI.rasterizerDiscardEnable = VK_FALSE;
     m_RasterizationState.CI.polygonMode = polygonMode;
     m_RasterizationState.CI.cullMode = cullMode;
     m_RasterizationState.CI.frontFace = frontFace;
@@ -146,6 +170,14 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddDepthStencilState(VkBool32 
     return *this;
 }
 
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddEmptyColorBlendAttachment()
+{
+    m_ColorBlendState.CI.attachmentCount = 0;
+    m_ColorBlendState.CI.pAttachments = nullptr;
+
+    return *this;
+}
+
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddColorBlendAttachment(VkBool32 enableBlend, VkColorComponentFlags writeMask)
 {
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
@@ -159,7 +191,10 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddColorBlendAttachment(VkBool
     colorBlendAttachment.colorWriteMask = writeMask;
 
     m_ColorBlendState.ColorBlendAttachmentStates.emplace_back(colorBlendAttachment);
-        
+
+    m_ColorBlendState.CI.attachmentCount = m_ColorBlendState.ColorBlendAttachmentStates.size();
+    m_ColorBlendState.CI.pAttachments = m_ColorBlendState.ColorBlendAttachmentStates.data();
+    
     return *this;
 }
 
@@ -185,6 +220,7 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddDynamicPipelineState(const 
 
 VkPipeline GraphicsPipelineBuilder::Create(VkDevice device, VkPipelineLayout layout, VkRenderPass renderPass)
 {
+    CI.layout = layout;
     CI.renderPass = renderPass;
     
     VkPipeline pipeline;

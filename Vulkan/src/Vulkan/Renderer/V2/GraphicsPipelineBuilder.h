@@ -6,7 +6,7 @@ class GraphicsPipelineBuilder
 {
 public:
     
-    GraphicsPipelineBuilder& Get()
+    static GraphicsPipelineBuilder& Get()
     {
         if(s_Instance == nullptr)
         {
@@ -20,10 +20,14 @@ public:
     
     GraphicsPipelineBuilder& Reset();
     
+    GraphicsPipelineBuilder& AddShaderStage(VkPipelineShaderStageCreateInfo shaderStageCI);
+
     GraphicsPipelineBuilder& AddShaderStage(const VkDevice& device, const std::string& shaderPath, VkShaderStageFlagBits stage);
 
     GraphicsPipelineBuilder& AddVertexInputState(uint32_t binding, std::initializer_list<vkglTF::VertexComponent> initList);
     
+    GraphicsPipelineBuilder& AddEmptyVertexInputState();
+
     GraphicsPipelineBuilder& AddInputAssemblyState(VkPrimitiveTopology topology);
     
     GraphicsPipelineBuilder& AddRasterizationState(VkPolygonMode polygonMode, VkCullModeFlags cullMode = VK_CULL_MODE_NONE, VkFrontFace frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE);
@@ -35,6 +39,8 @@ public:
     GraphicsPipelineBuilder& AddDynamicViewportState();
 
     GraphicsPipelineBuilder& AddDepthStencilState(VkBool32 depthTest, VkBool32 depthWrite);
+
+    GraphicsPipelineBuilder& AddEmptyColorBlendAttachment();
 
     GraphicsPipelineBuilder& AddColorBlendAttachment(VkBool32 enableBlend, VkColorComponentFlags writeMask);
     
@@ -135,5 +141,5 @@ private:
         
     } m_DynamicState;
     
-    GraphicsPipelineBuilder* s_Instance = nullptr;
+    static GraphicsPipelineBuilder* s_Instance;
 };
