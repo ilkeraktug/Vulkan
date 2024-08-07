@@ -265,7 +265,7 @@ namespace test
         AddVertexInputState(0, {vkglTF::VertexComponent::Position}).
         AddInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST).
         AddDynamicViewportState().
-        AddRasterizationState(VK_POLYGON_MODE_FILL, VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE).
+        AddRasterizationState(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE).
         AddMultisampleState().
         AddDepthStencilState(VK_FALSE, VK_TRUE).
         AddEmptyColorBlendAttachment().
@@ -278,7 +278,7 @@ namespace test
         AddEmptyVertexInputState().
         AddInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST).
         AddDynamicViewportState().
-        AddRasterizationState(VK_POLYGON_MODE_FILL, VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE).
+        AddRasterizationState(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE).
         AddMultisampleState().
         AddDepthStencilState(VK_TRUE, VK_TRUE).
         AddColorBlendAttachment(VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT).
