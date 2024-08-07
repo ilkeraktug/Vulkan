@@ -33,11 +33,11 @@ void PerspectiveCamera::OnUpdate(float deltaTime)
 		bIsInCameraMode = true;
 		Input::SetCursorHidden(bIsInCameraMode);
 		
-		float currentMousePosX = Input::GetMousePosition().first;
-		float currentMousePosY = Input::GetMousePosition().second;
+		double currentMousePosX = Input::GetMousePosition().first;
+		double currentMousePosY = Input::GetMousePosition().second;
 
-		float deltaX = currentMousePosX - (float)m_PrevMousePos.X;
-		float deltaY = currentMousePosY - (float)m_PrevMousePos.Y;
+		double deltaX = currentMousePosX - m_PrevMousePos.X;
+		double deltaY = currentMousePosY - m_PrevMousePos.Y;
 		
 		if(Input::IsKeyPressed(GLFW_KEY_W))
 		{
@@ -67,8 +67,8 @@ void PerspectiveCamera::OnUpdate(float deltaTime)
 		}
 		
 
-		addRotation(glm::vec3(0.0f, 1.0f, 0.0f) * m_RotationSpeed * deltaX * deltaTime);
-		addRotation(glm::vec3(1.0f, 0.0f, 0.0f) * m_RotationSpeed * deltaY * deltaTime);
+		addRotation(glm::vec3(0.0f, 1.0f, 0.0f) * m_RotationSpeed * (float)deltaX * deltaTime);
+		addRotation(glm::vec3(1.0f, 0.0f, 0.0f) * m_RotationSpeed * (float)deltaY * deltaTime);
 		
 	}
 	else

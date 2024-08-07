@@ -262,13 +262,12 @@ namespace test
         pipelines.shadow = GraphicsPipelineBuilder::Get().Reset().
         AddShaderStage(m_Core->GetDevice(), "C:/dev/Vulkan/Vulkan/assets/shaders/deferredrender/shadow.vspv", VK_SHADER_STAGE_VERTEX_BIT).
         AddShaderStage(m_Core->GetDevice(), "C:/dev/Vulkan/Vulkan/assets/shaders/deferredrender/shadow.geom.spv", VK_SHADER_STAGE_GEOMETRY_BIT).
-        //AddEmptyVertexInputState().
-        AddVertexInputState(0, {vkglTF::VertexComponent::Position/*, vkglTF::VertexComponent::UV, vkglTF::VertexComponent::Color, vkglTF::VertexComponent::Normal, vkglTF::VertexComponent::Tangent*/}).
+        AddVertexInputState(0, {vkglTF::VertexComponent::Position}).
         AddInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST).
         AddDynamicViewportState().
         AddRasterizationState(VK_POLYGON_MODE_FILL, VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE).
         AddMultisampleState().
-        AddDepthStencilState(VK_TRUE, VK_TRUE).
+        AddDepthStencilState(VK_FALSE, VK_TRUE).
         AddEmptyColorBlendAttachment().
         AddDynamicPipelineState(dynamicStateEnables).
         Create(m_Core->GetDevice(), m_PipelineLayout, shadow.FrameBuffer->GetRenderPass());
@@ -306,11 +305,11 @@ namespace test
     {
         SceneUniformBufferStructObject.lights[0].Color = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
         SceneUniformBufferStructObject.lights[1].Color = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-        SceneUniformBufferStructObject.lights[2].Color = glm::vec4(1.0f, 0.0f, 1.0f, 0.0f);
+        SceneUniformBufferStructObject.lights[2].Color = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
 
         SceneUniformBufferStructObject.lights[0].Position = glm::vec4(-14.0f, -0.5f, 15.0f, 1.0f);
         SceneUniformBufferStructObject.lights[1].Position = glm::vec4(14.0f, -4.0f, 12.0f, 1.0f);
-        SceneUniformBufferStructObject.lights[2].Position = glm::vec4(0.0f, -10.0f, 4.0f, 1.0f);
+        SceneUniformBufferStructObject.lights[2].Position = glm::vec4(0.0f, 5.0f, -4.0f, 1.0f);
 
         SceneUniformBufferStructObject.lights[0].Target = glm::vec4(-2.0f, 0.0f, 0.0f, 0.0f);
         SceneUniformBufferStructObject.lights[1].Target = glm::vec4(2.0f, 0.0f, 0.0f, 0.0f);
