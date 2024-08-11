@@ -24,11 +24,14 @@ public:
     DescriptorSetBuilder& CreateDescriptorPool(const std::vector<struct VkDescriptorPoolSize>& poolSize);
 
     DescriptorSetBuilder& AddDescriptorLayoutBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags shaderStage);
-    DescriptorSetBuilder& CreateDescriptorLayout();
-    DescriptorSetBuilder& CreateDescriptorLayout(const std::vector<VkDescriptorSetLayoutBinding>& layoutBinding);
+    DescriptorSetBuilder& CreateDescriptorLayout(VkDescriptorSetLayout& outLayout);
+    DescriptorSetBuilder& CreateDescriptorLayout(const std::vector<VkDescriptorSetLayoutBinding>& layoutBinding, VkDescriptorSetLayout& outLayout);
+    
     DescriptorSetBuilder& AllocateDescriptorSet(VkDescriptorSet& outDescriptorSet);
 
+    DescriptorSetBuilder& AddImageInfo(uint32_t binding, VkDescriptorImageInfo* imageInfo);
     DescriptorSetBuilder& AddImageInfo(uint32_t binding, VkImageView imageView, VkImageLayout layout, VkSampler sampler = VK_NULL_HANDLE);
+    DescriptorSetBuilder& AddBufferInfo(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
     DescriptorSetBuilder& AddBufferInfo(uint32_t binding, VkBuffer buffer, VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE);
     DescriptorSetBuilder& UpdateDescriptorSet();
 
@@ -38,14 +41,14 @@ private:
     VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
     VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
 
-    std::vector<VkDescriptorSet> m_DescriptorSets;
+    std::vector<std::shared_ptr<VkDescriptorSet>> m_DescriptorSets;
     std::vector<VkWriteDescriptorSet> m_WriteDescriptorSets;
 
     std::vector<struct VkDescriptorPoolSize> m_PoolSizes;
     std::vector<struct VkDescriptorSetLayoutBinding> m_LayoutBindings;
     
-    std::vector<VkDescriptorImageInfo> m_ImageInfos;
-    std::vector<VkDescriptorBufferInfo> m_BufferInfos;
+    std::vector<std::shared_ptr<VkDescriptorImageInfo>> m_ImageInfos;
+    std::vector<std::shared_ptr<VkDescriptorBufferInfo>> m_BufferInfos;
 
     static DescriptorSetBuilder* s_Instance;
 };

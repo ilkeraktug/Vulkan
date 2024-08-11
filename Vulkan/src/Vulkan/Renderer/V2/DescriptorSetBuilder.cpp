@@ -53,13 +53,13 @@ DescriptorSetBuilder& DescriptorSetBuilder::AddDescriptorLayoutBinding(uint32_t 
     return *this;
 }
 
-DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorLayout()
+DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorLayout(VkDescriptorSetLayout& outLayout)
 {
-    CreateDescriptorLayout(m_LayoutBindings);
+    CreateDescriptorLayout(m_LayoutBindings, outLayout);
     return *this;
 }
 
-DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorLayout(const std::vector<VkDescriptorSetLayoutBinding>& layoutBinding)
+DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorLayout(const std::vector<VkDescriptorSetLayoutBinding>& layoutBinding, VkDescriptorSetLayout& outLayout)
 {
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
     descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -67,6 +67,8 @@ DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorLayout(const std::ve
     descriptorSetLayoutCI.pBindings = layoutBinding.data();
     
      VK_CHECK(vkCreateDescriptorSetLayout(m_Device, &descriptorSetLayoutCI, nullptr, &m_DescriptorSetLayout));
+
+    outLayout = m_DescriptorSetLayout;
     
     return *this;
 }
@@ -74,53 +76,73 @@ DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorLayout(const std::ve
 DescriptorSetBuilder& DescriptorSetBuilder::AllocateDescriptorSet(VkDescriptorSet& outDescriptorSet)
 {
     VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = m_DescriptorPool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &m_DescriptorSetLayout;
 
-    VkDescriptorSet& descriptorSet = m_DescriptorSets.emplace_back();
-    outDescriptorSet = descriptorSet;
+    std::shared_ptr descriptorSet = m_DescriptorSets.emplace_back(std::make_shared<VkDescriptorSet>());
+    VK_CHECK(vkAllocateDescriptorSets(m_Device, &allocInfo, descriptorSet.get()));
     
-    VK_CHECK(vkAllocateDescriptorSets(m_Device, &allocInfo, &descriptorSet));
+    outDescriptorSet = *descriptorSet.get();
+
+    return *this;
+}
+
+DescriptorSetBuilder& DescriptorSetBuilder::AddImageInfo(uint32_t binding, VkDescriptorImageInfo* imageInfo)
+{
+    if(imageInfo)
+    {
+        AddImageInfo(binding, imageInfo->imageView, imageInfo->imageLayout, imageInfo->sampler);
+    }
 
     return *this;
 }
 
 DescriptorSetBuilder& DescriptorSetBuilder::AddImageInfo(uint32_t binding, VkImageView imageView, VkImageLayout layout, VkSampler sampler /*= VK_NULL_HANDLE*/)
 {
-    VkDescriptorImageInfo& imageInfo = m_ImageInfos.emplace_back();
-    imageInfo.sampler = sampler;
-    imageInfo.imageView = imageView;
-    imageInfo.imageLayout = layout;
+    std::shared_ptr imageInfo = m_ImageInfos.emplace_back(std::make_shared<VkDescriptorImageInfo>());
+    imageInfo->sampler = sampler;
+    imageInfo->imageView = imageView;
+    imageInfo->imageLayout = layout;
 
     VkWriteDescriptorSet set{};
     set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    set.dstSet = *m_DescriptorSets.end();
+    set.dstSet = *m_DescriptorSets[m_DescriptorSets.size() - 1];
     set.dstBinding = binding;
     set.descriptorCount = 1;
     set.descriptorType = sampler == VK_NULL_HANDLE ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    set.pImageInfo = &imageInfo;
+    set.pImageInfo = m_ImageInfos[m_ImageInfos.size() - 1].get();
 
     m_WriteDescriptorSets.push_back(set);
 
     return *this;
 }
 
+DescriptorSetBuilder& DescriptorSetBuilder::AddBufferInfo(uint32_t binding, VkDescriptorBufferInfo* bufferInfo)
+{
+    if(bufferInfo)
+    {
+        AddBufferInfo(binding, bufferInfo->buffer, bufferInfo->offset, bufferInfo->range);
+    }
+
+    return *this;
+}
+
 DescriptorSetBuilder& DescriptorSetBuilder::AddBufferInfo(uint32_t binding, VkBuffer buffer, VkDeviceSize offset /*= 0*/, VkDeviceSize range /*= VK_WHOLE_SIZE*/)
 {
-    VkDescriptorBufferInfo& bufferInfo = m_BufferInfos.emplace_back();
-    bufferInfo.buffer = buffer;
-    bufferInfo.offset = offset;
-    bufferInfo.range = range;
+    std::shared_ptr bufferInfo = m_BufferInfos.emplace_back(std::make_shared<VkDescriptorBufferInfo>());
+    bufferInfo->buffer = buffer;
+    bufferInfo->offset = offset;
+    bufferInfo->range = range;
 
     VkWriteDescriptorSet set{};
     set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    set.dstSet = *m_DescriptorSets.end();
+    set.dstSet = *m_DescriptorSets[m_DescriptorSets.size() - 1];
     set.dstBinding = binding;
     set.descriptorCount = 1;
     set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    set.pBufferInfo = &bufferInfo;
+    set.pBufferInfo = m_BufferInfos[m_BufferInfos.size() - 1].get();
 
     m_WriteDescriptorSets.push_back(set);
 
