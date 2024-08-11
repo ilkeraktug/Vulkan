@@ -3,8 +3,8 @@
 
 #include "Vulkan/Renderer/glTFModel.h"
 #include "Vulkan/Renderer/PerspectiveCamera.h"
-#include "Vulkan/Renderer/VulkanShader.h"
 #include "Vulkan/Renderer/V2/GraphicsPipelineBuilder.h"
+#include "Vulkan/Renderer/V2/MaterialIDRenderer.h"
 #include "Vulkan/Renderer/V2/VulkanFrameBuffer.h"
 #include "Vulkan/Renderer/V2/VulkanUniformBuffer2.h"
 
@@ -13,9 +13,12 @@ namespace test
     TestRenderPass::TestRenderPass(VulkanCore* core)
     {
         Init(core);
+        
         m_Camera = std::make_unique<PerspectiveCamera>(m_Core->swapchain.extent.width, m_Core->swapchain.extent.height, core);
         // m_Camera->setPosition(glm::vec3(-5.0f, 0.0f, -5.0f));
         m_Camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+        
+        m_MaterialIDRenderer = std::make_unique<MaterialIDRenderer>(m_Core, m_Camera.get());
 
         runBatchFile();
         loadassets();
@@ -26,6 +29,7 @@ namespace test
         preparePipeline();
         writeDescriptors();
         buildDeferredCommandBuffers();
+
         
         init = true;
     }
@@ -42,13 +46,14 @@ namespace test
         }
         
         m_Camera->OnUpdate(deltaTime);
+        m_MaterialIDRenderer->OnUpdate(deltaTime);
 
         timer += timerSpeed * deltaTime;
         if (timer > 1.0f)
         {
             timer -= 1.0f;
         }
-
+        
         updateUniformBuffers();
     }
 
@@ -98,12 +103,22 @@ namespace test
     {
         std::string AssetsPath = "C:\\dev\\Vulkan\\Vulkan\\assets\\";
         const uint32_t glTFLoadingFlags = vkglTF::FileLoadingFlags::PreTransformVertices | vkglTF::FileLoadingFlags::PreMultiplyVertexColors | vkglTF::FileLoadingFlags::FlipY;
-        models.model.loadFromFile(AssetsPath + "models/armor/armor.gltf", m_Core, m_Core->queue.TransferQueue, glTFLoadingFlags);
-        models.background.loadFromFile(AssetsPath + "models/deferred_box.gltf", m_Core, m_Core->queue.TransferQueue, glTFLoadingFlags);
+
+        models.model = std::make_shared<vkglTF::Model>();
+        models.background = std::make_shared<vkglTF::Model>();
+        
+        models.model->loadFromFile(AssetsPath + "models/armor/armor.gltf", m_Core, m_Core->queue.TransferQueue, glTFLoadingFlags);
+        models.background->loadFromFile(AssetsPath + "models/deferred_box.gltf", m_Core, m_Core->queue.TransferQueue, glTFLoadingFlags);
         textures.model.colorMap.loadFromFile(AssetsPath+ "models/armor/colormap_rgba.ktx", VK_FORMAT_R8G8B8A8_UNORM, m_Core, m_Core->queue.TransferQueue);
         textures.model.normalMap.loadFromFile(AssetsPath + "models/armor/normalmap_rgba.ktx", VK_FORMAT_R8G8B8A8_UNORM, m_Core, m_Core->queue.TransferQueue);
         textures.background.colorMap.loadFromFile(AssetsPath + "textures/stonefloor02_color_rgba.ktx", VK_FORMAT_R8G8B8A8_UNORM, m_Core, m_Core->queue.TransferQueue);
         textures.background.normalMap.loadFromFile(AssetsPath + "textures/stonefloor02_normal_rgba.ktx", VK_FORMAT_R8G8B8A8_UNORM, m_Core, m_Core->queue.TransferQueue);
+
+        if(m_MaterialIDRenderer)
+        {
+            m_MaterialIDRenderer->AddModel(models.background);
+            m_MaterialIDRenderer->AddModel(models.model);
+        }
     }
 
     void TestRenderPass::deferredSetup()
@@ -446,12 +461,12 @@ namespace test
             vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.shadow);
             // Background
             vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &descriptorSets.shadow, 0, NULL);
-            models.background.draw(currentCmdBuffer);
+            models.background->draw(currentCmdBuffer);
 
             // Objects
             vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &descriptorSets.shadow, 0, NULL);
-            models.model.bindBuffers(currentCmdBuffer);
-            vkCmdDrawIndexed(currentCmdBuffer, models.model.indices.count, 3, 0, 0, 0);
+            models.model->bindBuffers(currentCmdBuffer);
+            vkCmdDrawIndexed(currentCmdBuffer, models.model->indices.count, 3, 0, 0, 0);
             
 
             vkCmdEndRenderPass(currentCmdBuffer);
@@ -489,12 +504,12 @@ namespace test
             vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.gBuffer);
             // Background
             vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &descriptorSets.background, 0, NULL);
-            models.background.draw(currentCmdBuffer);
+            models.background->draw(currentCmdBuffer);
 
             // Objects
             vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &descriptorSets.model, 0, NULL);
-            models.model.bindBuffers(currentCmdBuffer);
-            vkCmdDrawIndexed(currentCmdBuffer, models.model.indices.count, 3, 0, 0, 0);
+            models.model->bindBuffers(currentCmdBuffer);
+            vkCmdDrawIndexed(currentCmdBuffer, models.model->indices.count, 3, 0, 0, 0);
             
             vkCmdEndRenderPass(currentCmdBuffer);
 
@@ -515,6 +530,12 @@ namespace test
             vkCmdDraw(currentCmdBuffer, 3, 1, 0, 0);
             
             vkCmdEndRenderPass(currentCmdBuffer);
+
+            if(m_MaterialIDRenderer)
+            {
+                m_MaterialIDRenderer->OnRender(currentCmdBuffer);
+            }
+            
             VK_CHECK(vkEndCommandBuffer(currentCmdBuffer));
         }
         

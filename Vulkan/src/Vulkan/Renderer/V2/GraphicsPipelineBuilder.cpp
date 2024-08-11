@@ -146,7 +146,9 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::AddViewportState(float width, 
     m_ViewportState.Scissors = { offset, extent};
 
     m_ViewportState.CI.viewportCount = 1;
+    m_ViewportState.CI.pViewports = &m_ViewportState.Viewport;
     m_ViewportState.CI.scissorCount = 1;
+    m_ViewportState.CI.pScissors = &m_ViewportState.Scissors;
 
     return *this;
 }

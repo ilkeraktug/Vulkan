@@ -5,6 +5,7 @@
 #include "Vulkan/Renderer/Abstract/Camera.h"
 #include "Vulkan/Renderer/V2/VulkanTexture.h"
 
+class MaterialIDRenderer;
 class VulkanFrameBuffer;
 
 namespace V2
@@ -39,6 +40,8 @@ namespace test
         void buildDeferredCommandBuffers();
     private:
         std::unique_ptr<Camera> m_Camera;
+
+        std::unique_ptr<MaterialIDRenderer> m_MaterialIDRenderer;
         
         struct Shadow
         {
@@ -101,8 +104,8 @@ namespace test
         } textures;
 
         struct {
-            vkglTF::Model model;
-            vkglTF::Model background;
+            std::shared_ptr<vkglTF::Model> model;
+            std::shared_ptr<vkglTF::Model> background;
         } models;
         
         struct Light
