@@ -9,8 +9,12 @@ DescriptorSetBuilder& DescriptorSetBuilder::Begin(VkDevice Device)
 {
     m_Device = Device;
 
+    m_DescriptorSets.clear();
+    m_WriteDescriptorSets.clear();
     m_PoolSizes.clear();
     m_LayoutBindings.clear();
+    m_ImageInfos.clear();
+    m_BufferInfos.clear();
 
     return *this;
 }
@@ -53,9 +57,24 @@ DescriptorSetBuilder& DescriptorSetBuilder::AddDescriptorLayoutBinding(uint32_t 
     return *this;
 }
 
+DescriptorSetBuilder& DescriptorSetBuilder::ResetDescriptorLayoutBinding()
+{
+    m_LayoutBindings.clear();
+    
+    return *this;
+}
+
 DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorLayout(VkDescriptorSetLayout& outLayout)
 {
     CreateDescriptorLayout(m_LayoutBindings, outLayout);
+    return *this;
+}
+
+DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorLayout(std::vector<VkDescriptorSetLayout>& outLayout)
+{
+    VkDescriptorSetLayout layout;
+    CreateDescriptorLayout(m_LayoutBindings, layout);
+    outLayout.push_back(layout);
     return *this;
 }
 
@@ -81,10 +100,10 @@ DescriptorSetBuilder& DescriptorSetBuilder::AllocateDescriptorSet(VkDescriptorSe
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &m_DescriptorSetLayout;
 
-    std::shared_ptr descriptorSet = m_DescriptorSets.emplace_back(std::make_shared<VkDescriptorSet>());
-    VK_CHECK(vkAllocateDescriptorSets(m_Device, &allocInfo, descriptorSet.get()));
+    VkDescriptorSet& descriptorSet = m_DescriptorSets.emplace_back();
+    VK_CHECK(vkAllocateDescriptorSets(m_Device, &allocInfo, &descriptorSet));
     
-    outDescriptorSet = *descriptorSet.get();
+    outDescriptorSet = descriptorSet;
 
     return *this;
 }
@@ -108,7 +127,7 @@ DescriptorSetBuilder& DescriptorSetBuilder::AddImageInfo(uint32_t binding, VkIma
 
     VkWriteDescriptorSet set{};
     set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    set.dstSet = *m_DescriptorSets[m_DescriptorSets.size() - 1];
+    set.dstSet = m_DescriptorSets[m_DescriptorSets.size() - 1];
     set.dstBinding = binding;
     set.descriptorCount = 1;
     set.descriptorType = sampler == VK_NULL_HANDLE ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -138,7 +157,7 @@ DescriptorSetBuilder& DescriptorSetBuilder::AddBufferInfo(uint32_t binding, VkBu
 
     VkWriteDescriptorSet set{};
     set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    set.dstSet = *m_DescriptorSets[m_DescriptorSets.size() - 1];
+    set.dstSet = m_DescriptorSets[m_DescriptorSets.size() - 1];
     set.dstBinding = binding;
     set.descriptorCount = 1;
     set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

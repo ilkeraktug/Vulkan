@@ -24,7 +24,9 @@ public:
     DescriptorSetBuilder& CreateDescriptorPool(const std::vector<struct VkDescriptorPoolSize>& poolSize);
 
     DescriptorSetBuilder& AddDescriptorLayoutBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags shaderStage);
+    DescriptorSetBuilder& ResetDescriptorLayoutBinding();
     DescriptorSetBuilder& CreateDescriptorLayout(VkDescriptorSetLayout& outLayout);
+    DescriptorSetBuilder& CreateDescriptorLayout(std::vector<VkDescriptorSetLayout>& outLayout);
     DescriptorSetBuilder& CreateDescriptorLayout(const std::vector<VkDescriptorSetLayoutBinding>& layoutBinding, VkDescriptorSetLayout& outLayout);
     
     DescriptorSetBuilder& AllocateDescriptorSet(VkDescriptorSet& outDescriptorSet);
@@ -41,7 +43,7 @@ private:
     VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
     VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
 
-    std::vector<std::shared_ptr<VkDescriptorSet>> m_DescriptorSets;
+    std::vector<VkDescriptorSet> m_DescriptorSets;
     std::vector<VkWriteDescriptorSet> m_WriteDescriptorSets;
 
     std::vector<struct VkDescriptorPoolSize> m_PoolSizes;
