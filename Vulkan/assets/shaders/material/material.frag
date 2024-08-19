@@ -3,7 +3,7 @@ struct MaterialBuffer
     float ID;
 };
 
-//[[vk::push_constant]] MaterialBuffer material;
+[[vk::push_constant]] MaterialBuffer material;
 
 struct FSOutput
 {

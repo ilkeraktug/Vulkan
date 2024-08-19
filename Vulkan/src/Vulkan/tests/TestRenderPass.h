@@ -32,7 +32,6 @@ namespace test
         void deferredSetup();
         void shadowSetup();
         void prepareDescriptorSetLayout();
-        void writeDescriptors();
         void preparePipeline();
         void prepareUniformBuffers();
 

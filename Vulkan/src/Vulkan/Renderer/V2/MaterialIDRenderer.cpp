@@ -27,12 +27,12 @@ void MaterialIDRenderer::OnRender(VkCommandBuffer cmdBuffer)
     draw(cmdBuffer);
 }
 
-void MaterialIDRenderer::AddModel(const vkglTF::Model& model)
+void MaterialIDRenderer::AddModel(const vkglTF::Model& model, uint32_t size /*= 1*/, float* instancePosData /*= nullptr*/)
 {
-    AddModel(std::make_shared<vkglTF::Model>(model));
+    AddModel(std::make_shared<vkglTF::Model>(model), size, instancePosData);
 }
 
-void MaterialIDRenderer::AddModel(std::shared_ptr<vkglTF::Model> model)
+void MaterialIDRenderer::AddModel(std::shared_ptr<vkglTF::Model> model, uint32_t size /*= 1*/, float* instancePosData /*= nullptr*/)
 {
     m_Models.push_back(model);
     
@@ -43,7 +43,11 @@ void MaterialIDRenderer::AddModel(std::shared_ptr<vkglTF::Model> model)
     ubo.Projection = m_Camera->getProjectionMatrix();
     
     uniformBuffer->copyToBuffer(&ubo, sizeof(UBO));
+        
+    std::unique_ptr<V2::VulkanUniformBuffer2>& uniformBuffer_InstancePos = m_UniformBuffers_InstancePos.emplace_back(std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(float) * size));
 
+    uniformBuffer_InstancePos->copyToBuffer(instancePosData, sizeof(float) * size);
+    
     VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
     descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     descriptorSetAllocInfo.descriptorPool = m_DescriptorPool;
@@ -59,6 +63,11 @@ void MaterialIDRenderer::AddModel(std::shared_ptr<vkglTF::Model> model)
     uniformBufferDescriptorInfo.offset = 0;
     uniformBufferDescriptorInfo.range = VK_WHOLE_SIZE;
     
+    VkDescriptorBufferInfo uniformBufferDescriptorInfo2{};
+    uniformBufferDescriptorInfo2.buffer = uniformBuffer_InstancePos->GetHandle();
+    uniformBufferDescriptorInfo2.offset = 0;
+    uniformBufferDescriptorInfo2.range = VK_WHOLE_SIZE;
+    
     VkWriteDescriptorSet writeDescriptorSet{};
     writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     writeDescriptorSet.dstSet = newDescritproSet;
@@ -67,7 +76,17 @@ void MaterialIDRenderer::AddModel(std::shared_ptr<vkglTF::Model> model)
     writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     writeDescriptorSet.pBufferInfo = &uniformBufferDescriptorInfo;
     
-    vkUpdateDescriptorSets(m_Core->GetDevice(), 1, &writeDescriptorSet, 0, nullptr);
+    VkWriteDescriptorSet writeDescriptorSet2{};
+    writeDescriptorSet2.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet2.dstSet = newDescritproSet;
+    writeDescriptorSet2.dstBinding = 1;
+    writeDescriptorSet2.descriptorCount = 1;
+    writeDescriptorSet2.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    writeDescriptorSet2.pBufferInfo = &uniformBufferDescriptorInfo2;
+
+    std::vector<VkWriteDescriptorSet> writeDescriptorSets = {writeDescriptorSet, writeDescriptorSet2};
+    
+    vkUpdateDescriptorSets(m_Core->GetDevice(), writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
 }
 
 void MaterialIDRenderer::compileShaders()
@@ -92,11 +111,19 @@ void MaterialIDRenderer::setupLayouts()
     descriptorSetLayoutBindings.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptorSetLayoutBindings.descriptorCount = 1;
     descriptorSetLayoutBindings.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutBinding descriptorSetLayoutBindings2{};
+    descriptorSetLayoutBindings2.binding = 1;
+    descriptorSetLayoutBindings2.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorSetLayoutBindings2.descriptorCount = 1;
+    descriptorSetLayoutBindings2.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {descriptorSetLayoutBindings, descriptorSetLayoutBindings2};
     
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
     descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorSetLayoutCI.bindingCount = 1;
-    descriptorSetLayoutCI.pBindings = &descriptorSetLayoutBindings;
+    descriptorSetLayoutCI.bindingCount = bindings.size();
+    descriptorSetLayoutCI.pBindings = bindings.data();
 
     VK_CHECK(vkCreateDescriptorSetLayout(m_Core->GetDevice(), &descriptorSetLayoutCI, nullptr, &m_DescriptorSetLayout));
 
@@ -121,7 +148,7 @@ void MaterialIDRenderer::setupLayouts()
     pipelineLayoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutCI.setLayoutCount = 1;
     pipelineLayoutCI.pSetLayouts = &m_DescriptorSetLayout;
-    pipelineLayoutCI.pushConstantRangeCount = 0;
+    pipelineLayoutCI.pushConstantRangeCount = 1;
     pipelineLayoutCI.pPushConstantRanges = &pushConstantRange;
 
     VK_CHECK(vkCreatePipelineLayout(m_Core->GetDevice(), &pipelineLayoutCI, nullptr, &m_PipelineLayout));
@@ -190,6 +217,9 @@ void MaterialIDRenderer::draw(VkCommandBuffer cmdBuffer)
         const VkDeviceSize offsets[1] = {0};
         vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &m_Models[j]->vertices.buffer, offsets);
         vkCmdBindIndexBuffer(cmdBuffer, m_Models[j]->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+        float id = j;
+        vkCmdPushConstants(cmdBuffer, m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &id);
 
         vkCmdDrawIndexed(cmdBuffer, m_Models[j]->indices.count, 1, 0, 0, 0);
     }

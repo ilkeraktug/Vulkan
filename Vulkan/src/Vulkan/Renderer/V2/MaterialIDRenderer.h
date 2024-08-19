@@ -17,10 +17,12 @@ public:
     void OnUpdate(float deltaTime);
     void OnRender(VkCommandBuffer cmdBuffer);
 
-    void AddModel(const vkglTF::Model& model);
-    void AddModel(std::shared_ptr<vkglTF::Model> model);
+    void AddModel(const vkglTF::Model& model, uint32_t size = 1, float* instancePosData = nullptr);
+    void AddModel(std::shared_ptr<vkglTF::Model> model, uint32_t size = 1, float* instancePosData = nullptr);
 
-    inline static uint64_t GlobalID = 0;
+    const std::unique_ptr<VulkanFrameBuffer>& GetFrameBuffer() const { return m_Framebuffer; }
+    
+    inline static uint64_t GlobalID = 1;
 private:
     void compileShaders();
     void setupFramebuffer();
@@ -40,6 +42,7 @@ private:
     std::unique_ptr<VulkanFrameBuffer> m_Framebuffer;
 
     std::vector<std::unique_ptr<V2::VulkanUniformBuffer2>> m_UniformBuffers;
+    std::vector<std::unique_ptr<V2::VulkanUniformBuffer2>> m_UniformBuffers_InstancePos;
 
     VkDescriptorSetLayout m_DescriptorSetLayout;
     VkDescriptorPool m_DescriptorPool;

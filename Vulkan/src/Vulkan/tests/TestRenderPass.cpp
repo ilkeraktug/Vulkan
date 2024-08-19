@@ -28,9 +28,7 @@ namespace test
         prepareUniformBuffers();
         prepareDescriptorSetLayout();
         preparePipeline();
-        writeDescriptors();
         buildDeferredCommandBuffers();
-
         
         init = true;
     }
@@ -175,7 +173,7 @@ namespace test
         AddImageInfo(2, scene.FrameBuffer->GetImageView(1), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, scene.FrameBuffer->GetSampler()).
         AddImageInfo(3, scene.FrameBuffer->GetImageView(2), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, scene.FrameBuffer->GetSampler()).
         AddBufferInfo(4, sceneUniformBuffer->GetHandle()).
-        AddImageInfo(5, shadow.FrameBuffer->GetImageView(0), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, shadow.FrameBuffer->GetSampler()).
+        AddImageInfo(5, shadow.FrameBuffer->GetImageView(0), VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, shadow.FrameBuffer->GetSampler()).
         UpdateDescriptorSet().
         AllocateDescriptorSet(descriptorSets.model).
         AddBufferInfo(0, soldiersUniformBuffer->GetHandle()).
@@ -197,111 +195,6 @@ namespace test
         pipelineLayoutCI.pSetLayouts = &m_DescriptorSetLayout;
 
         VK_CHECK(vkCreatePipelineLayout(m_Core->GetDevice(), &pipelineLayoutCI, nullptr, &m_PipelineLayout));
-    }
-
-    void TestRenderPass::writeDescriptors()
-    {
-        // std::vector<VkDescriptorPoolSize> descriptorPools =
-        // {
-        //     {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
-        //     {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}
-        // };
-        //
-        // VkDescriptorPoolCreateInfo descriptorPoolCI{};
-        // descriptorPoolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        // descriptorPoolCI.maxSets = 12;
-        // descriptorPoolCI.poolSizeCount = 2;
-        // descriptorPoolCI.pPoolSizes = descriptorPools.data();
-        //
-        // VK_CHECK(vkCreateDescriptorPool(m_Core->GetDevice(), &descriptorPoolCI, nullptr, &m_DescriptorPool));
-        //
-        // VkDescriptorSetAllocateInfo allocInfo{};
-        // allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        // allocInfo.descriptorPool = m_DescriptorPool;
-        // allocInfo.descriptorSetCount = 1;
-        // allocInfo.pSetLayouts = &m_DescriptorSetLayout;
-        //
-        // VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &allocInfo, &m_DescriptorSet));
-
-        VkDescriptorBufferInfo binding0Info;
-        binding0Info.buffer = shadowUniformBuffer->GetHandle();
-        binding0Info.offset = 0;
-        binding0Info.range = VK_WHOLE_SIZE;
-
-        VkDescriptorBufferInfo binding0gBufferInfo;
-        binding0gBufferInfo.buffer = gBufferUniformBuffer->GetHandle();
-        binding0gBufferInfo.offset = 0;
-        binding0gBufferInfo.range = VK_WHOLE_SIZE;
-
-        VkDescriptorBufferInfo soldiersBinding0gBufferInfo;
-        soldiersBinding0gBufferInfo.buffer = soldiersUniformBuffer->GetHandle();
-        soldiersBinding0gBufferInfo.offset = 0;
-        soldiersBinding0gBufferInfo.range = VK_WHOLE_SIZE;
-
-        VkDescriptorBufferInfo binding4Info;
-        binding4Info.buffer = sceneUniformBuffer->GetHandle();
-        binding4Info.offset = 0;
-        binding4Info.range = VK_WHOLE_SIZE;
-
-        VkDescriptorImageInfo binding1Info;
-        binding1Info.sampler = scene.FrameBuffer->GetSampler();
-        binding1Info.imageView = scene.FrameBuffer->GetImageView(0);
-        binding1Info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-        VkDescriptorImageInfo binding2Info;
-        binding2Info.sampler = scene.FrameBuffer->GetSampler();
-        binding2Info.imageView = scene.FrameBuffer->GetImageView(1);
-        binding2Info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-        VkDescriptorImageInfo binding3Info;
-        binding3Info.sampler = scene.FrameBuffer->GetSampler();
-        binding3Info.imageView = scene.FrameBuffer->GetImageView(2);
-        binding3Info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-        VkDescriptorImageInfo binding5Info;
-        binding5Info.sampler = shadow.FrameBuffer->GetSampler();
-        binding5Info.imageView = shadow.FrameBuffer->GetImageView(0);
-        binding5Info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-        
-
-        // std::vector<VkWriteDescriptorSet> descriptorSetWrites =
-        // {
-        //     init::getImageWrite(m_DescriptorSet, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &binding1Info),
-        //     init::getImageWrite(m_DescriptorSet, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &binding2Info),
-        //     init::getImageWrite(m_DescriptorSet, 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &binding3Info),
-        //     init::getBufferWrite(m_DescriptorSet, 4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &binding4Info),
-        //     init::getImageWrite(m_DescriptorSet, 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &binding5Info),
-        // };
-        // vkUpdateDescriptorSets(m_Core->GetDevice(), descriptorSetWrites.size(), descriptorSetWrites.data(), 0, nullptr);
-        //
-        //
-        // VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &allocInfo, &descriptorSets.model));
-        // std::vector<VkWriteDescriptorSet> descriptorSetWrites1 =
-        // {
-        //     init::getBufferWrite(descriptorSets.model, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &soldiersBinding0gBufferInfo),
-        //     init::getImageWrite(descriptorSets.model, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &textures.model.colorMap.descriptor),
-        //     init::getImageWrite(descriptorSets.model, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &textures.model.normalMap.descriptor),
-        // };
-        //
-        // vkUpdateDescriptorSets(m_Core->GetDevice(), descriptorSetWrites1.size(), descriptorSetWrites1.data(), 0, nullptr);
-        // VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &allocInfo, &descriptorSets.background));
-        //
-        // std::vector<VkWriteDescriptorSet> descriptorSetWrites2 =
-        // {
-        //     init::getBufferWrite(descriptorSets.background, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &binding0gBufferInfo),
-        //     init::getImageWrite(descriptorSets.background, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &textures.background.colorMap.descriptor),
-        //     init::getImageWrite(descriptorSets.background, 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, &textures.background.normalMap.descriptor),
-        // };
-        // vkUpdateDescriptorSets(m_Core->GetDevice(), descriptorSetWrites2.size(), descriptorSetWrites2.data(), 0, nullptr);
-        //
-        //
-        // VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &allocInfo, &descriptorSets.shadow));
-        // std::vector<VkWriteDescriptorSet> descriptorSetWrites3 =
-        // {
-        //     init::getBufferWrite(descriptorSets.shadow, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &binding0Info),
-        // };
-        //
-        // vkUpdateDescriptorSets(m_Core->GetDevice(), descriptorSetWrites3.size(), descriptorSetWrites3.data(), 0, nullptr);
     }
 
     void TestRenderPass::preparePipeline()

@@ -669,7 +669,7 @@ void VulkanCore::createSwapchain()
 	else
 		VK_ERROR("Present and graphics queues are different!");
 
-
+	
 	uint32_t surfaceFormatCount;
 	VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(m_PhysicalDevice, swapchain.surface, &surfaceFormatCount, nullptr));
 	VK_ASSERT(surfaceFormatCount, "Surface format count is 0!");
