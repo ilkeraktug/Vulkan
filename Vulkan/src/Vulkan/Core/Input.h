@@ -31,6 +31,8 @@ public:
     
     INPUT_FUNCTIONS_ONE_INPUT(IsKeyPressed)
     INPUT_FUNCTIONS_ONE_INPUT(IsMouseButtonPressed)
+    INPUT_FUNCTIONS_ONE_INPUT(IsKeyReleased)
+    INPUT_FUNCTIONS_ONE_INPUT(IsMouseButtonReleased)
     
     INPUT_FUNCTIONS_ZERO_INPUT(IsCtrlPressed)
     INPUT_FUNCTIONS_ZERO_INPUT(IsAltPressed)

@@ -15,6 +15,8 @@ public:
 protected:
     bool IsKeyPressedImpl(int) const override;
     bool IsMouseButtonPressedImpl(int) const override;
+    bool IsKeyReleasedImpl(int) const override;
+    bool IsMouseButtonReleasedImpl(int) const override;
     bool IsCtrlPressedImpl() const override;
     bool IsAltPressedImpl() const override;
     bool IsShiftPressedImpl() const override;

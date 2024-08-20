@@ -101,6 +101,7 @@ void MaterialIDRenderer::setupFramebuffer()
 {
     m_Framebuffer = std::make_unique<VulkanFrameBuffer>(m_Core);
     m_Framebuffer->AddAttachment(VK_FORMAT_R16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, m_Core->swapchain.extent.width, m_Core->swapchain.extent.height, 1);
+    m_Framebuffer->AddAttachment(VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, m_Core->swapchain.extent.width, m_Core->swapchain.extent.height, 1);
     m_Framebuffer->Create();
 }
 

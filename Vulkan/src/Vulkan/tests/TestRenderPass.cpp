@@ -1,9 +1,11 @@
 ﻿#include "pch.h"
 #include "TestRenderPass.h"
 
+#include "Vulkan/Core/Input.h"
 #include "Vulkan/Renderer/glTFModel.h"
 #include "Vulkan/Renderer/PerspectiveCamera.h"
 #include "Vulkan/Renderer/V2/DescriptorSetBuilder.h"
+#include "Vulkan/Renderer/V2/FullScreenRenderer.h"
 #include "Vulkan/Renderer/V2/GraphicsPipelineBuilder.h"
 #include "Vulkan/Renderer/V2/MaterialIDRenderer.h"
 #include "Vulkan/Renderer/V2/VulkanFrameBuffer.h"
@@ -20,6 +22,14 @@ namespace test
         m_Camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
         
         m_MaterialIDRenderer = std::make_unique<MaterialIDRenderer>(m_Core, m_Camera.get());
+        m_FullScreenRenderer = std::make_unique<FullScreenRenderer>(m_Core);
+
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.sampler = m_MaterialIDRenderer->GetFrameBuffer()->GetSampler();
+        imageInfo.imageView = m_MaterialIDRenderer->GetFrameBuffer()->GetImageView(0);
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        
+        m_FullScreenRenderer->displayTexture(imageInfo);
 
         runBatchFile();
         loadassets();
@@ -52,6 +62,18 @@ namespace test
         {
             timer -= 1.0f;
         }
+
+        if(Input::IsKeyPressed(GLFW_KEY_Y) && !bPressed)
+        {
+            bVisTexture = !bVisTexture;
+            bPressed = !bPressed;
+        }
+
+        if(bPressed && Input::IsKeyReleased(GLFW_KEY_Y))
+        {
+            bPressed = !bPressed;
+        }
+        
         
         updateUniformBuffers();
     }
@@ -440,6 +462,11 @@ namespace test
             
             vkCmdEndRenderPass(currentCmdBuffer);
 
+            if(m_MaterialIDRenderer)
+            {
+                m_MaterialIDRenderer->OnRender(currentCmdBuffer);
+            }
+            
             renderPassBI.renderPass = m_Core->resources.renderPass;
             renderPassBI.framebuffer = m_Core->resources.frameBuffers[i];
             renderPassBI.renderArea.extent.width = m_Core->swapchain.extent.width;
@@ -455,13 +482,18 @@ namespace test
             // Note: Also used for debug display if debugDisplayTarget > 0
             vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.scene);
             vkCmdDraw(currentCmdBuffer, 3, 1, 0, 0);
+
+            if(m_FullScreenRenderer && bVisTexture)
+            {
+                m_FullScreenRenderer->draw2(currentCmdBuffer);
+            }
             
             vkCmdEndRenderPass(currentCmdBuffer);
+            
 
-            if(m_MaterialIDRenderer)
-            {
-                m_MaterialIDRenderer->OnRender(currentCmdBuffer);
-            }
+            
+
+            
             
             VK_CHECK(vkEndCommandBuffer(currentCmdBuffer));
         }

@@ -19,13 +19,25 @@ WindowsInput::~WindowsInput()
 bool WindowsInput::IsKeyPressedImpl(int keycode) const
 {
     GLFWwindow* Window = static_cast<GLFWwindow*>(Window::GetWindow());
-    return glfwGetKey(Window, keycode) > 0;
+    return glfwGetKey(Window, keycode) == GLFW_PRESS;
 }
 
 bool WindowsInput::IsMouseButtonPressedImpl(int button) const
 {
     GLFWwindow* Window = static_cast<GLFWwindow*>(Window::GetWindow());
-    return glfwGetMouseButton(Window, button) > 0;
+    return glfwGetMouseButton(Window, button) == GLFW_PRESS;
+}
+
+bool WindowsInput::IsKeyReleasedImpl(int keycode) const
+{
+    GLFWwindow* Window = static_cast<GLFWwindow*>(Window::GetWindow());
+    return glfwGetKey(Window, keycode) == GLFW_RELEASE;
+}
+
+bool WindowsInput::IsMouseButtonReleasedImpl(int button) const
+{
+    GLFWwindow* Window = static_cast<GLFWwindow*>(Window::GetWindow());
+    return glfwGetMouseButton(Window, button) == GLFW_RELEASE;
 }
 
 bool WindowsInput::IsCtrlPressedImpl() const

@@ -8,8 +8,9 @@ class FullScreenRenderer
 public:
     FullScreenRenderer(VulkanCore* core);
 
-    void displayTexture(VkDescriptorImageInfo* ImageInfo);
+    void displayTexture(VkDescriptorImageInfo ImageInfo);
     void draw(VkCommandBuffer cmdBuffer);
+    void draw2(VkCommandBuffer cmdBuffer);
 private:
     void compileShaders();
     
@@ -29,5 +30,5 @@ private:
     VkPipelineLayout m_PipelineLayout;
     VkPipeline m_Pipeline;
 
-   VkDescriptorImageInfo* m_ImageInfo;
+   VkDescriptorImageInfo m_ImageInfo;
 };

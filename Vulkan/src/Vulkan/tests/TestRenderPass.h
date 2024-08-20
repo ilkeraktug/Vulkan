@@ -5,6 +5,7 @@
 #include "Vulkan/Renderer/Abstract/Camera.h"
 #include "Vulkan/Renderer/V2/VulkanTexture.h"
 
+class FullScreenRenderer;
 class MaterialIDRenderer;
 class VulkanFrameBuffer;
 
@@ -41,6 +42,7 @@ namespace test
         std::unique_ptr<Camera> m_Camera;
 
         std::unique_ptr<MaterialIDRenderer> m_MaterialIDRenderer;
+        std::unique_ptr<FullScreenRenderer> m_FullScreenRenderer;
         
         struct Shadow
         {
@@ -154,5 +156,8 @@ namespace test
         float timerSpeed = 0.25f;
 
         bool init = false;
+
+        bool bVisTexture = false;
+        bool bPressed = false;
     };
 }
