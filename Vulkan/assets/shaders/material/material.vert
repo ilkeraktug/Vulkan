@@ -1,23 +1,24 @@
 struct UBO
 {
-    float4x4 model;
     float4x4 view;
     float4x4 projection;
 };
 
+[[vk::binding(0, 0)]]
 cbuffer ubo : register(b0)
 {
     UBO ubo;
 }
 
-struct UBOInstancePos
+struct ModelUBO
 {
-    float4 instancePos[3];
+    float4x4 model;
 };
 
-cbuffer ubo : register(b1)
+[[vk::binding(0, 1)]]
+cbuffer ubo : register(b0)
 {
-    UBOInstancePos uboInstancePos;
+    ModelUBO modelUbo;
 }
 
 struct VSOutput
@@ -31,7 +32,7 @@ VSOutput main(float3 inputPos : POSITION0, uint InstanceId : SV_InstanceID)
     float4 tempPos = float4(inputPos,1.0f);// /*+ uboInstancePos.instancePos[InstanceId]*/;
     
     float4x4 projView = mul(ubo.view, ubo.projection);
-    float4x4 mvp = mul(ubo.model, projView);
+    float4x4 mvp = mul(modelUbo.model, projView);
     output.outPos = mul(tempPos, mvp);
     
     return output;

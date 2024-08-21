@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "MaterialIDRenderer.h"
 
+#include "DescriptorSetBuilder.h"
 #include "GraphicsPipelineBuilder.h"
 #include "VulkanFrameBuffer.h"
 #include "VulkanUniformBuffer2.h"
@@ -9,6 +10,8 @@
 MaterialIDRenderer::MaterialIDRenderer(VulkanCore* core, Camera* camera)
     : m_Core(core), m_Camera(camera)
 {
+    m_CameraDataUBO = std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(CameraUBOData));
+    
     compileShaders();
     setupFramebuffer();
     setupLayouts();
@@ -36,57 +39,23 @@ void MaterialIDRenderer::AddModel(std::shared_ptr<vkglTF::Model> model, uint32_t
 {
     m_Models.push_back(model);
     
-    std::unique_ptr<V2::VulkanUniformBuffer2>& uniformBuffer = m_UniformBuffers.emplace_back(std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(UBO)));
-    UBO ubo{};
-    ubo.Model = model->nodes[0]->getMatrix();
-    ubo.View = m_Camera->getViewMatrix();
-    ubo.Projection = m_Camera->getProjectionMatrix();
-    
-    uniformBuffer->copyToBuffer(&ubo, sizeof(UBO));
-        
-    std::unique_ptr<V2::VulkanUniformBuffer2>& uniformBuffer_InstancePos = m_UniformBuffers_InstancePos.emplace_back(std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(float) * size));
+    m_ModelUniformBuffers.emplace_back(std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(ModelUBOData)));
+    createDescriptorSetForModel();
 
-    uniformBuffer_InstancePos->copyToBuffer(instancePosData, sizeof(float) * size);
+    if(instancePosData)
+    {
+        std::unique_ptr<V2::VulkanUniformBuffer2>& uniformBuffer_InstancePos = m_ModelInstancePosUniformBuffers.emplace_back(std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(float) * size));
     
-    VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
-    descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    descriptorSetAllocInfo.descriptorPool = m_DescriptorPool;
-    descriptorSetAllocInfo.descriptorSetCount = 1;
-    descriptorSetAllocInfo.pSetLayouts = &m_DescriptorSetLayout;
-    
-    VkDescriptorSet& newDescritproSet = m_DescriptorSets.emplace_back();
+        uniformBuffer_InstancePos->copyToBuffer(instancePosData, sizeof(float) * size);
+    }
 
-    VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &descriptorSetAllocInfo, &newDescritproSet));
-
-    VkDescriptorBufferInfo uniformBufferDescriptorInfo{};
-    uniformBufferDescriptorInfo.buffer = uniformBuffer->GetHandle();
-    uniformBufferDescriptorInfo.offset = 0;
-    uniformBufferDescriptorInfo.range = VK_WHOLE_SIZE;
-    
-    VkDescriptorBufferInfo uniformBufferDescriptorInfo2{};
-    uniformBufferDescriptorInfo2.buffer = uniformBuffer_InstancePos->GetHandle();
-    uniformBufferDescriptorInfo2.offset = 0;
-    uniformBufferDescriptorInfo2.range = VK_WHOLE_SIZE;
-    
-    VkWriteDescriptorSet writeDescriptorSet{};
-    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeDescriptorSet.dstSet = newDescritproSet;
-    writeDescriptorSet.dstBinding = 0;
-    writeDescriptorSet.descriptorCount = 1;
-    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writeDescriptorSet.pBufferInfo = &uniformBufferDescriptorInfo;
-    
-    VkWriteDescriptorSet writeDescriptorSet2{};
-    writeDescriptorSet2.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writeDescriptorSet2.dstSet = newDescritproSet;
-    writeDescriptorSet2.dstBinding = 1;
-    writeDescriptorSet2.descriptorCount = 1;
-    writeDescriptorSet2.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writeDescriptorSet2.pBufferInfo = &uniformBufferDescriptorInfo2;
-
-    std::vector<VkWriteDescriptorSet> writeDescriptorSets = {writeDescriptorSet, writeDescriptorSet2};
-    
-    vkUpdateDescriptorSets(m_Core->GetDevice(), writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
+    for(auto&& e : m_Models)
+    {
+        for(auto&& node : e->nodes)
+        {
+            node.
+        }
+    }
 }
 
 void MaterialIDRenderer::compileShaders()
@@ -107,38 +76,17 @@ void MaterialIDRenderer::setupFramebuffer()
 
 void MaterialIDRenderer::setupLayouts()
 {
-    VkDescriptorSetLayoutBinding descriptorSetLayoutBindings{};
-    descriptorSetLayoutBindings.binding = 0;
-    descriptorSetLayoutBindings.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorSetLayoutBindings.descriptorCount = 1;
-    descriptorSetLayoutBindings.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    VkDescriptorSetLayoutBinding descriptorSetLayoutBindings2{};
-    descriptorSetLayoutBindings2.binding = 1;
-    descriptorSetLayoutBindings2.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorSetLayoutBindings2.descriptorCount = 1;
-    descriptorSetLayoutBindings2.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {descriptorSetLayoutBindings, descriptorSetLayoutBindings2};
-    
-    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
-    descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorSetLayoutCI.bindingCount = bindings.size();
-    descriptorSetLayoutCI.pBindings = bindings.data();
-
-    VK_CHECK(vkCreateDescriptorSetLayout(m_Core->GetDevice(), &descriptorSetLayoutCI, nullptr, &m_DescriptorSetLayout));
-
-    VkDescriptorPoolSize descriptorPoolSize{};
-    descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorPoolSize.descriptorCount = 100;
-    
-    VkDescriptorPoolCreateInfo descriptorPoolCI{};
-    descriptorPoolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    descriptorPoolCI.maxSets = 100;
-    descriptorPoolCI.poolSizeCount = 1;
-    descriptorPoolCI.pPoolSizes = &descriptorPoolSize;
-    
-    VK_CHECK(vkCreateDescriptorPool(m_Core->GetDevice(), &descriptorPoolCI, nullptr, &m_DescriptorPool));
+    DescriptorSetBuilder::Get().Begin(m_Core->GetDevice()).
+    AddDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT).
+    CreateDescriptorLayout(m_DescriptorSetLayouts).
+    ResetDescriptorLayoutBinding().
+    AddDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT).
+    CreateDescriptorLayout(m_DescriptorSetLayouts).
+    AddDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 20).
+    CreateDescriptorPool(m_DescriptorPool).
+    AllocateDescriptorSet(0, m_CameraDataSet).
+    AddBufferInfo(0, m_CameraDataUBO->GetHandle()).
+    UpdateDescriptorSet();
 
     VkPushConstantRange pushConstantRange{};
     pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -147,8 +95,8 @@ void MaterialIDRenderer::setupLayouts()
     
     VkPipelineLayoutCreateInfo pipelineLayoutCI{};
     pipelineLayoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutCI.setLayoutCount = 1;
-    pipelineLayoutCI.pSetLayouts = &m_DescriptorSetLayout;
+    pipelineLayoutCI.setLayoutCount = m_DescriptorSetLayouts.size();
+    pipelineLayoutCI.pSetLayouts = m_DescriptorSetLayouts.data();
     pipelineLayoutCI.pushConstantRangeCount = 1;
     pipelineLayoutCI.pPushConstantRanges = &pushConstantRange;
 
@@ -159,13 +107,17 @@ void MaterialIDRenderer::updateUniformBuffer()
 {
     for(int i = 0; i < m_Models.size(); ++i)
     {
-        UBO ubo{};
+        ModelUBOData ubo{};
         ubo.Model = m_Models[i]->nodes[0]->getMatrix();
-        ubo.View = m_Camera->getViewMatrix();
-        ubo.Projection = m_Camera->getProjectionMatrix();
         
-        m_UniformBuffers[i]->copyToBuffer(&ubo, sizeof(UBO));
+        m_ModelUniformBuffers[i]->copyToBuffer(&ubo, sizeof(ModelUBOData));
     }
+    
+    CameraUBOData cameraUboData{};
+    cameraUboData.View = m_Camera->getViewMatrix();
+    cameraUboData.Projection = m_Camera->getProjectionMatrix();
+
+    m_CameraDataUBO->copyToBuffer(&cameraUboData, sizeof(CameraUBOData));
 }
 
 void MaterialIDRenderer::setupDescriptorSets()
@@ -186,6 +138,35 @@ void MaterialIDRenderer::setupGraphicsPipeline()
     AddDepthStencilState(VK_TRUE, VK_TRUE).
     AddColorBlendAttachment(VK_FALSE, 0xf).
     Create(m_Core->GetDevice(), m_PipelineLayout, m_Framebuffer->GetRenderPass());
+}
+
+void MaterialIDRenderer::createDescriptorSetForModel()
+{
+    VkDescriptorSet& modelDescriptorSet = m_ModelDataSets.emplace_back();
+    
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_DescriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &m_DescriptorSetLayouts[1];
+
+    VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &allocInfo, &modelDescriptorSet));
+
+    VkDescriptorBufferInfo uniformBufferInfo{};
+    uniformBufferInfo.buffer = m_ModelUniformBuffers.back()->GetHandle();
+    uniformBufferInfo.offset = 0;
+    uniformBufferInfo.range = VK_WHOLE_SIZE;
+    
+    VkWriteDescriptorSet writeDescriptorSet{};
+    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet.dstSet = modelDescriptorSet;
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    writeDescriptorSet.pBufferInfo = &uniformBufferInfo;
+
+    vkUpdateDescriptorSets(m_Core->GetDevice(), 1, &writeDescriptorSet, 0, nullptr);
+    
 }
 
 void MaterialIDRenderer::draw(VkCommandBuffer cmdBuffer)
@@ -209,20 +190,21 @@ void MaterialIDRenderer::draw(VkCommandBuffer cmdBuffer)
     vkCmdBeginRenderPass(cmdBuffer, &renderPassBI, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+    vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_CameraDataSet, 0, nullptr);
     
-    for(int j = 0; j < m_Models.size(); ++j)
+    for(int i = 0; i < m_Models.size(); ++i)
     {
-        vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[j], 0, nullptr);
+        vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 1, 1, &m_ModelDataSets[i], 0, nullptr);
     
         //m_Models[j]->draw(cmdBuffer);
         const VkDeviceSize offsets[1] = {0};
-        vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &m_Models[j]->vertices.buffer, offsets);
-        vkCmdBindIndexBuffer(cmdBuffer, m_Models[j]->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &m_Models[i]->vertices.buffer, offsets);
+        vkCmdBindIndexBuffer(cmdBuffer, m_Models[i]->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-        float id = j;
+        float id = i;
         vkCmdPushConstants(cmdBuffer, m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &id);
 
-        vkCmdDrawIndexed(cmdBuffer, m_Models[j]->indices.count, 1, 0, 0, 0);
+        vkCmdDrawIndexed(cmdBuffer, m_Models[i]->indices.count, 1, 0, 0, 0);
     }
     
     

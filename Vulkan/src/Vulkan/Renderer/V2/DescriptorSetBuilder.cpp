@@ -31,7 +31,12 @@ DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorPool()
     return CreateDescriptorPool(m_PoolSizes);
 }
 
-DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorPool(const std::vector<struct VkDescriptorPoolSize>& poolSize)
+DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorPool(VkDescriptorPool& pool)
+{
+    return CreateDescriptorPool(m_PoolSizes, pool);
+}
+
+DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorPool(const std::vector<VkDescriptorPoolSize>& poolSize)
 {
     VkDescriptorPoolCreateInfo poolCI{};
     poolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -40,6 +45,21 @@ DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorPool(const std::vect
     poolCI.pPoolSizes = poolSize.data();
 
     VK_CHECK(vkCreateDescriptorPool(m_Device, &poolCI, nullptr, &m_DescriptorPool));
+
+    return *this;
+}
+
+DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorPool(const std::vector<struct VkDescriptorPoolSize>& poolSize, VkDescriptorPool& pool)
+{
+    VkDescriptorPoolCreateInfo poolCI{};
+    poolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolCI.maxSets = 100;
+    poolCI.poolSizeCount = static_cast<uint32_t>(poolSize.size());
+    poolCI.pPoolSizes = poolSize.data();
+
+    VK_CHECK(vkCreateDescriptorPool(m_Device, &poolCI, nullptr, &m_DescriptorPool));
+
+    pool = m_DescriptorPool;
 
     return *this;
 }
@@ -80,14 +100,33 @@ DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorLayout(std::vector<V
 
 DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorLayout(const std::vector<VkDescriptorSetLayoutBinding>& layoutBinding, VkDescriptorSetLayout& outLayout)
 {
+    VkDescriptorSetLayout& layout = m_DescriptorSetLayouts.emplace_back();
+    
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
     descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(layoutBinding.size());
     descriptorSetLayoutCI.pBindings = layoutBinding.data();
     
-     VK_CHECK(vkCreateDescriptorSetLayout(m_Device, &descriptorSetLayoutCI, nullptr, &m_DescriptorSetLayout));
+     VK_CHECK(vkCreateDescriptorSetLayout(m_Device, &descriptorSetLayoutCI, nullptr, &layout));
 
-    outLayout = m_DescriptorSetLayout;
+    outLayout = layout;
+    
+    
+    return *this;
+}
+
+DescriptorSetBuilder& DescriptorSetBuilder::CreateDescriptorLayout(const std::vector<VkDescriptorSetLayoutBinding>& layoutBinding, std::vector<VkDescriptorSetLayout>& outLayout)
+{
+    VkDescriptorSetLayout& layout = m_DescriptorSetLayouts.emplace_back();
+    
+    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
+    descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(layoutBinding.size());
+    descriptorSetLayoutCI.pBindings = layoutBinding.data();
+    
+    VK_CHECK(vkCreateDescriptorSetLayout(m_Device, &descriptorSetLayoutCI, nullptr, &layout));
+
+    outLayout.push_back(layout);
     
     return *this;
 }
@@ -98,7 +137,23 @@ DescriptorSetBuilder& DescriptorSetBuilder::AllocateDescriptorSet(VkDescriptorSe
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = m_DescriptorPool;
     allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &m_DescriptorSetLayout;
+    allocInfo.pSetLayouts = &m_DescriptorSetLayouts.back();
+
+    VkDescriptorSet& descriptorSet = m_DescriptorSets.emplace_back();
+    VK_CHECK(vkAllocateDescriptorSets(m_Device, &allocInfo, &descriptorSet));
+    
+    outDescriptorSet = descriptorSet;
+
+    return *this;
+}
+
+DescriptorSetBuilder& DescriptorSetBuilder::AllocateDescriptorSet(uint32_t set, VkDescriptorSet& outDescriptorSet)
+{
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_DescriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &m_DescriptorSetLayouts[set];
 
     VkDescriptorSet& descriptorSet = m_DescriptorSets.emplace_back();
     VK_CHECK(vkAllocateDescriptorSets(m_Device, &allocInfo, &descriptorSet));
@@ -172,6 +227,13 @@ DescriptorSetBuilder& DescriptorSetBuilder::AddBufferInfo(uint32_t binding, VkBu
 DescriptorSetBuilder& DescriptorSetBuilder::UpdateDescriptorSet()
 {
     vkUpdateDescriptorSets(m_Device, m_WriteDescriptorSets.size(), m_WriteDescriptorSets.data(), 0, nullptr);
+
+    return *this;
+}
+
+DescriptorSetBuilder& DescriptorSetBuilder::ResetDescriptorWrite()
+{
+    m_WriteDescriptorSets.clear();
 
     return *this;
 }

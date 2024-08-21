@@ -31,6 +31,8 @@ private:
     void setupDescriptorSets();
     void setupGraphicsPipeline();
 
+    void createDescriptorSetForModel();
+
     void draw(VkCommandBuffer cmdBuffer);
 
     void updateUniformBuffer(const vkglTF::Model& model);
@@ -41,22 +43,30 @@ private:
 
     std::unique_ptr<VulkanFrameBuffer> m_Framebuffer;
 
-    std::vector<std::unique_ptr<V2::VulkanUniformBuffer2>> m_UniformBuffers;
-    std::vector<std::unique_ptr<V2::VulkanUniformBuffer2>> m_UniformBuffers_InstancePos;
-
-    VkDescriptorSetLayout m_DescriptorSetLayout;
-    VkDescriptorPool m_DescriptorPool;
-    std::vector<VkDescriptorSet> m_DescriptorSets;
+    std::vector<std::unique_ptr<V2::VulkanUniformBuffer2>> m_ModelUniformBuffers;
+    std::vector<std::unique_ptr<V2::VulkanUniformBuffer2>> m_ModelInstancePosUniformBuffers;
 
     VkPipelineLayout m_PipelineLayout;
     VkPipeline m_Pipeline;
 
-    struct UBO
+    struct CameraUBOData
     {
-        glm::mat4 Model;
         glm::mat4 View;
         glm::mat4 Projection;
     };
 
+    struct ModelUBOData
+    {
+        glm::mat4 Model;
+    };
+
     std::vector<std::shared_ptr<vkglTF::Model>> m_Models;
+
+    std::unique_ptr<V2::VulkanUniformBuffer2> m_CameraDataUBO;
+
+    VkDescriptorSet m_CameraDataSet;
+    std::vector<VkDescriptorSet> m_ModelDataSets;
+
+    std::vector<VkDescriptorSetLayout> m_DescriptorSetLayouts;
+    VkDescriptorPool m_DescriptorPool;
 };
