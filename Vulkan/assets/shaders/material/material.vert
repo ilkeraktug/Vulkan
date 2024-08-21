@@ -26,14 +26,16 @@ struct VSOutput
     float4 outPos : SV_POSITION;
 };
 
-VSOutput main(float3 inputPos : POSITION0, uint InstanceId : SV_InstanceID)
+VSOutput main(float4 inputPos : POSITION0, uint InstanceId : SV_InstanceID)
 {
     VSOutput output = (VSOutput)0;
-    float4 tempPos = float4(inputPos,1.0f);// /*+ uboInstancePos.instancePos[InstanceId]*/;
+    float4 tempPos = inputPos;
     
-    float4x4 projView = mul(ubo.view, ubo.projection);
-    float4x4 mvp = mul(modelUbo.model, projView);
-    output.outPos = mul(tempPos, mvp);
+    float4 worldPos = mul(modelUbo.model, tempPos);
+    float4 viewPos = mul(ubo.view, worldPos);
+    float4 screenPos = mul(ubo.projection, viewPos);
+
+    output.outPos = screenPos;
     
     return output;
 }

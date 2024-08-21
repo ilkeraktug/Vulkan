@@ -32,6 +32,7 @@ private:
     void setupGraphicsPipeline();
 
     void createDescriptorSetForModel();
+    void createDescriptorSetForNode(VkDescriptorSet& descriptorSet, const std::unique_ptr<V2::VulkanUniformBuffer2>& uniformBuffer);
 
     void draw(VkCommandBuffer cmdBuffer);
 
@@ -60,7 +61,22 @@ private:
         glm::mat4 Model;
     };
 
-    std::vector<std::shared_ptr<vkglTF::Model>> m_Models;
+    struct NodeData
+    {
+        // std::shared_ptr<vkglTF::Node> Node;
+       vkglTF::Node* Node;
+        
+        VkDescriptorSet DescriptorSet;
+        std::unique_ptr<V2::VulkanUniformBuffer2> UniformBuffer;
+    };
+    
+    struct ModelData
+    {
+        std::shared_ptr<vkglTF::Model> Model;
+        std::vector<NodeData> Nodes;
+    };
+    
+    std::vector<ModelData> m_Models;
 
     std::unique_ptr<V2::VulkanUniformBuffer2> m_CameraDataUBO;
 

@@ -37,7 +37,8 @@ void MaterialIDRenderer::AddModel(const vkglTF::Model& model, uint32_t size /*= 
 
 void MaterialIDRenderer::AddModel(std::shared_ptr<vkglTF::Model> model, uint32_t size /*= 1*/, float* instancePosData /*= nullptr*/)
 {
-    m_Models.push_back(model);
+    ModelData& modelData = m_Models.emplace_back();
+    modelData.Model = model;
     
     m_ModelUniformBuffers.emplace_back(std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(ModelUBOData)));
     createDescriptorSetForModel();
@@ -49,12 +50,13 @@ void MaterialIDRenderer::AddModel(std::shared_ptr<vkglTF::Model> model, uint32_t
         uniformBuffer_InstancePos->copyToBuffer(instancePosData, sizeof(float) * size);
     }
 
-    for(auto&& e : m_Models)
+    for(int i = 0; i < model->nodes.size(); ++i)
     {
-        for(auto&& node : e->nodes)
-        {
-            node.
-        }
+        NodeData& nodeData = modelData.Nodes.emplace_back();
+        nodeData.UniformBuffer = std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(ModelUBOData));
+        nodeData.Node = model->nodes[i];
+        
+        createDescriptorSetForNode(nodeData.DescriptorSet, nodeData.UniformBuffer);
     }
 }
 
@@ -107,10 +109,13 @@ void MaterialIDRenderer::updateUniformBuffer()
 {
     for(int i = 0; i < m_Models.size(); ++i)
     {
-        ModelUBOData ubo{};
-        ubo.Model = m_Models[i]->nodes[0]->getMatrix();
+        for(auto&& nodeData : m_Models[i].Nodes)
+        {
+            ModelUBOData ubo{};
+            ubo.Model = nodeData.Node->getMatrix();
         
-        m_ModelUniformBuffers[i]->copyToBuffer(&ubo, sizeof(ModelUBOData));
+            nodeData.UniformBuffer->copyToBuffer(&ubo, sizeof(ModelUBOData));
+        }
     }
     
     CameraUBOData cameraUboData{};
@@ -133,7 +138,7 @@ void MaterialIDRenderer::setupGraphicsPipeline()
     AddVertexInputState(0, {vkglTF::VertexComponent::Position}).
     AddInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST).
     AddViewportState(m_Core->swapchain.extent.width, m_Core->swapchain.extent.height).
-    AddRasterizationState(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE).
+    AddRasterizationState(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE).
     AddMultisampleState().
     AddDepthStencilState(VK_TRUE, VK_TRUE).
     AddColorBlendAttachment(VK_FALSE, 0xf).
@@ -169,6 +174,32 @@ void MaterialIDRenderer::createDescriptorSetForModel()
     
 }
 
+void MaterialIDRenderer::createDescriptorSetForNode(VkDescriptorSet& descriptorSet, const std::unique_ptr<V2::VulkanUniformBuffer2>& uniformBuffer)
+{
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_DescriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &m_DescriptorSetLayouts[1];
+
+    VK_CHECK(vkAllocateDescriptorSets(m_Core->GetDevice(), &allocInfo, &descriptorSet));
+
+    VkDescriptorBufferInfo uniformBufferInfo{};
+    uniformBufferInfo.buffer = uniformBuffer->GetHandle();
+    uniformBufferInfo.offset = 0;
+    uniformBufferInfo.range = VK_WHOLE_SIZE;
+    
+    VkWriteDescriptorSet writeDescriptorSet{};
+    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet.dstSet = descriptorSet;
+    writeDescriptorSet.dstBinding = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    writeDescriptorSet.pBufferInfo = &uniformBufferInfo;
+
+    vkUpdateDescriptorSets(m_Core->GetDevice(), 1, &writeDescriptorSet, 0, nullptr);
+}
+
 void MaterialIDRenderer::draw(VkCommandBuffer cmdBuffer)
 {
     VkClearValue clearValues[2];
@@ -194,17 +225,21 @@ void MaterialIDRenderer::draw(VkCommandBuffer cmdBuffer)
     
     for(int i = 0; i < m_Models.size(); ++i)
     {
-        vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 1, 1, &m_ModelDataSets[i], 0, nullptr);
     
         //m_Models[j]->draw(cmdBuffer);
         const VkDeviceSize offsets[1] = {0};
-        vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &m_Models[i]->vertices.buffer, offsets);
-        vkCmdBindIndexBuffer(cmdBuffer, m_Models[i]->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &m_Models[i].Model->vertices.buffer, offsets);
+        vkCmdBindIndexBuffer(cmdBuffer, m_Models[i].Model->indices.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-        float id = i;
-        vkCmdPushConstants(cmdBuffer, m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &id);
+        for(int j = 0; j < m_Models[i].Nodes.size(); ++j)
+        {
+            vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 1, 1, &m_Models[i].Nodes[j].DescriptorSet, 0, nullptr);
+            float id = i * j + i + 1;
+            vkCmdPushConstants(cmdBuffer, m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float), &id);
+            
+            vkCmdDrawIndexed(cmdBuffer, m_Models[i].Model->indices.count, 1, 0, 0, 0);
+        }
 
-        vkCmdDrawIndexed(cmdBuffer, m_Models[i]->indices.count, 1, 0, 0, 0);
     }
     
     

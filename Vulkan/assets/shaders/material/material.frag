@@ -14,8 +14,8 @@ FSOutput main()
 {
     FSOutput output = (FSOutput)0;
     
-    //output.first = material.ID;
-    output.first = 1.71f;
+    output.first = material.ID;
+    //output.first = 1.71f;
     
     return output;
 }
