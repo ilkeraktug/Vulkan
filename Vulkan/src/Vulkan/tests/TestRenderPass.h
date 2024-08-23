@@ -11,6 +11,7 @@ class VulkanFrameBuffer;
 
 namespace V2
 {
+    class VulkanBuffer2;
     class VulkanUniformBuffer2;
 }
 
@@ -38,6 +39,8 @@ namespace test
 
         void updateUniformBuffers();
         void buildDeferredCommandBuffers();
+
+        void AddLight(glm::vec4 position, glm::vec4 target, glm::vec4 color, glm::mat4 MVP);
     private:
         std::unique_ptr<Camera> m_Camera;
 
@@ -87,12 +90,27 @@ namespace test
             VkPipeline gBuffer;
         } pipelines;
 
-        VkDescriptorSetLayout m_DescriptorSetLayout;
-        VkPipelineLayout m_PipelineLayout;
+        struct
+        {
+            VkDescriptorPool gBuffer;
+            VkDescriptorPool scene;
+            VkDescriptorPool shadow;
+        } descriptorPools;
+        
+        struct
+        {
+            VkDescriptorSetLayout gBuffer;
+            VkDescriptorSetLayout scene;
+            VkDescriptorSetLayout shadow;
+        } descriptorSetLayouts;
 
-        VkDescriptorPool m_DescriptorPool;
-        VkDescriptorSet m_DescriptorSet;
-
+        struct
+        {
+            VkPipelineLayout gBuffer;
+            VkPipelineLayout scene;
+            VkPipelineLayout shadow;
+        } pipelineLayouts;
+        
         struct {
             struct {
                 vks::Texture2D colorMap;
@@ -109,50 +127,68 @@ namespace test
             std::shared_ptr<vkglTF::Model> background;
         } models;
         
-        struct Light
+        struct LightData
         {
+            LightData() = default;
+            LightData(glm::vec4 position, glm::vec4 target, glm::vec4 color)
+                :   Position(position),
+                    Target(target),
+                    Color(color) {}
+            
             glm::vec4 Position;
             glm::vec4 Target;
             glm::vec4 Color;
+        };
+
+        struct LightMVPs
+        {
+            LightMVPs() = default;
+            LightMVPs(glm::mat4 mvp)
+                :   MVP(mvp) {}
+            
             glm::mat4 MVP;
         };
+        
+       struct ModelData
+       {
+           ModelData() = default;
+           ModelData(glm::mat4 modelMatrix)
+               :   ModelMatrix(modelMatrix) {}
+           
+           glm::mat4 ModelMatrix;
+       };
+
+        struct CameraData
+        {
+            CameraData() = default;
+            CameraData(glm::vec4 position, glm::mat4 view, glm::mat4 projection)
+                :   Position(position), View(view), Projection(projection) {}
+            
+            glm::vec4 Position;
+            glm::mat4 View;
+            glm::mat4 Projection;
+        };
+
+        std::vector<LightData> m_LightData;
+        std::vector<LightMVPs> m_LightMVPs;
+        std::vector<glm::vec4> m_InstancePositions;
 
         struct {
             VkDescriptorSet model;
             VkDescriptorSet background;
             VkDescriptorSet shadow;
+            VkDescriptorSet scene;
         } descriptorSets;
-
-        struct SceneUniformBufferStruct
-        {
-            glm::vec3 viewPosition;
-            Light lights[3];
-            int debugShadow;
-        } SceneUniformBufferStructObject;
-
-        struct ShadowUniformBufferStruct
-        {
-            glm::mat4 MVPs[3];
-            glm::vec4 InstancePos[3];
-        } ShadowUniformBufferStructObject;
-
-        struct gBufferUniformBufferStruct
-        {
-            glm::mat4 Model;
-            glm::mat4 View;
-            glm::mat4 Projection;
-            glm::vec4 InstancePos[3];
-        } gBufferUniformBufferStructObject;
-
-        gBufferUniformBufferStruct soldiersUniformBufferObject;
         
-        std::unique_ptr<V2::VulkanUniformBuffer2> gBufferUniformBuffer;
-        std::unique_ptr<V2::VulkanUniformBuffer2> shadowUniformBuffer;
-        std::unique_ptr<V2::VulkanUniformBuffer2> sceneUniformBuffer;
-        std::unique_ptr<V2::VulkanUniformBuffer2> soldiersUniformBuffer;
+        std::unique_ptr<V2::VulkanUniformBuffer2> modelUniformBuffer;
+        std::unique_ptr<V2::VulkanUniformBuffer2> backgroundUniformBuffer;
+        std::unique_ptr<V2::VulkanUniformBuffer2> cameraUniformBuffer;
+        std::unique_ptr<V2::VulkanBuffer2> instancePositionBuffer;
+        
+        std::unique_ptr<V2::VulkanBuffer2> LightMVPsBuffer;
+        std::unique_ptr<V2::VulkanBuffer2> LightDataBuffer;
 
         float timer = 0.0f;
-        // Multiplier for speeding up (or slowing down) the global timer
         float timerSpeed = 0.25f;
 
         bool init = false;

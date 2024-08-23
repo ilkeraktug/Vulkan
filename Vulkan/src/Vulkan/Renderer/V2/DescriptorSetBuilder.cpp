@@ -193,17 +193,17 @@ DescriptorSetBuilder& DescriptorSetBuilder::AddImageInfo(uint32_t binding, VkIma
     return *this;
 }
 
-DescriptorSetBuilder& DescriptorSetBuilder::AddBufferInfo(uint32_t binding, VkDescriptorBufferInfo* bufferInfo)
+DescriptorSetBuilder& DescriptorSetBuilder::AddBufferInfo(uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorType bufferType /*= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER*/)
 {
     if(bufferInfo)
     {
-        AddBufferInfo(binding, bufferInfo->buffer, bufferInfo->offset, bufferInfo->range);
+        AddBufferInfo(binding, bufferInfo->buffer, bufferType, bufferInfo->offset, bufferInfo->range);
     }
 
     return *this;
 }
 
-DescriptorSetBuilder& DescriptorSetBuilder::AddBufferInfo(uint32_t binding, VkBuffer buffer, VkDeviceSize offset /*= 0*/, VkDeviceSize range /*= VK_WHOLE_SIZE*/)
+DescriptorSetBuilder& DescriptorSetBuilder::AddBufferInfo(uint32_t binding, VkBuffer buffer, VkDescriptorType bufferType /*= VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER*/, VkDeviceSize offset /*= 0*/, VkDeviceSize range /*= VK_WHOLE_SIZE*/)
 {
     std::shared_ptr bufferInfo = m_BufferInfos.emplace_back(std::make_shared<VkDescriptorBufferInfo>());
     bufferInfo->buffer = buffer;
@@ -215,7 +215,7 @@ DescriptorSetBuilder& DescriptorSetBuilder::AddBufferInfo(uint32_t binding, VkBu
     set.dstSet = m_DescriptorSets[m_DescriptorSets.size() - 1];
     set.dstBinding = binding;
     set.descriptorCount = 1;
-    set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    set.descriptorType = bufferType;
     set.pBufferInfo = m_BufferInfos[m_BufferInfos.size() - 1].get();
 
     m_WriteDescriptorSets.push_back(set);
@@ -228,7 +228,7 @@ DescriptorSetBuilder& DescriptorSetBuilder::UpdateDescriptorSet()
 {
     vkUpdateDescriptorSets(m_Device, m_WriteDescriptorSets.size(), m_WriteDescriptorSets.data(), 0, nullptr);
 
-    return *this;
+    return ResetDescriptorWrite();
 }
 
 DescriptorSetBuilder& DescriptorSetBuilder::ResetDescriptorWrite()
@@ -236,4 +236,19 @@ DescriptorSetBuilder& DescriptorSetBuilder::ResetDescriptorWrite()
     m_WriteDescriptorSets.clear();
 
     return *this;
+}
+
+VkDescriptorSet DescriptorSetBuilder::AllocateDescriptorSet(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout* layout)
+{
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = pool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = layout;
+
+    VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+
+    VK_CHECK(vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet));
+
+    return descriptorSet;
 }

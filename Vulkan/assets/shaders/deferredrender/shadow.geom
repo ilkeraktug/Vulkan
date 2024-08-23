@@ -1,20 +1,11 @@
+StructuredBuffer<float4> InstancePositions : register(t0);
+StructuredBuffer<float4x4> LightMVPs : register(t1);
 
 struct VSOutput
 {
     float4 Position : SV_POSITION;
     [[vk::location(0)]] uint InstanceIndex : TEXCOORD0;
 };
-
-struct UBO
-{
-    float4x4 MVP[3];
-    float4 InstancePos[3];
-};
-
-cbuffer c_ubo : register(b0)
-{
-    UBO ubo;
-}
 
 struct GSOutput
 {
@@ -26,13 +17,15 @@ struct GSOutput
 [maxvertexcount(3)]
 void main(triangle VSOutput input[3], uint InvocationID : SV_GSInstanceID, inout TriangleStream<GSOutput> output)
 {
-    float4 instancePos = ubo.InstancePos[input[0].InstanceIndex];
+    float4 instancePos = InstancePositions.Load(input[0].InstanceIndex);
+    
+    float4x4 LightMVP = LightMVPs.Load(InvocationID);
     
     for(int i = 0; i < 3; i++)
     {
-        float4 tempPos = instancePos + input[i].Position;
+        float4 tempPos = instancePos + InstancePositions.Load(i);
         GSOutput outputStruct = (GSOutput)0;
-        outputStruct.Position = mul(tempPos, ubo.MVP[InvocationID]);
+        outputStruct.Position = mul(tempPos, LightMVP);
         outputStruct.Layer = InvocationID;
         output.Append(outputStruct);
     }

@@ -16,7 +16,6 @@ MaterialIDRenderer::MaterialIDRenderer(VulkanCore* core, Camera* camera)
     setupFramebuffer();
     setupLayouts();
     updateUniformBuffer();
-    setupDescriptorSets();
     setupGraphicsPipeline();
 }
 
@@ -123,11 +122,6 @@ void MaterialIDRenderer::updateUniformBuffer()
     cameraUboData.Projection = m_Camera->getProjectionMatrix();
 
     m_CameraDataUBO->copyToBuffer(&cameraUboData, sizeof(CameraUBOData));
-}
-
-void MaterialIDRenderer::setupDescriptorSets()
-{
-
 }
 
 void MaterialIDRenderer::setupGraphicsPipeline()
@@ -245,8 +239,4 @@ void MaterialIDRenderer::draw(VkCommandBuffer cmdBuffer)
     
     vkCmdEndRenderPass(cmdBuffer);
     //VK_CHECK(vkEndCommandBuffer(cmdBuffer));
-}
-
-void MaterialIDRenderer::updateUniformBuffer(const vkglTF::Model& model)
-{
 }

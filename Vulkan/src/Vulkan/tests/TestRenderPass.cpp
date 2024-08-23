@@ -161,62 +161,112 @@ namespace test
 
     void TestRenderPass::prepareDescriptorSetLayout()
     {
-        // std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings
-        // {
-        //     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, nullptr },
-        //     {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
-        //     {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr  },
-        //     {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
-        //     {4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },
-        //     {5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }
-        // };
-        //
-        // VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
-        // descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        // descriptorSetLayoutCI.bindingCount = descriptorSetLayoutBindings.size();
-        // descriptorSetLayoutCI.pBindings = descriptorSetLayoutBindings.data();
-        //
-        // VK_CHECK(vkCreateDescriptorSetLayout(m_Core->GetDevice(), &descriptorSetLayoutCI, nullptr, &m_DescriptorSetLayout));
-        
-        
+#if 0
+        // DescriptorSetBuilder::Get().Begin(m_Core->GetDevice()).
+        // AddDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT).
+        // AddDescriptorLayoutBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).
+        // AddDescriptorLayoutBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).
+        // AddDescriptorLayoutBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).
+        // AddDescriptorLayoutBinding(4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT).
+        // AddDescriptorLayoutBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).
+        // CreateDescriptorLayout(m_DescriptorSetLayout).
+        // AddDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10).
+        // AddDescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10).
+        // CreateDescriptorPool().
+        // AllocateDescriptorSet(m_DescriptorSet).
+        // AddImageInfo(1, scene.FrameBuffer->GetImageView(0), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, scene.FrameBuffer->GetSampler()).
+        // AddImageInfo(2, scene.FrameBuffer->GetImageView(1), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, scene.FrameBuffer->GetSampler()).
+        // AddImageInfo(3, scene.FrameBuffer->GetImageView(2), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, scene.FrameBuffer->GetSampler()).
+        // AddBufferInfo(4, sceneUniformBuffer->GetHandle()).
+        // AddImageInfo(5, shadow.FrameBuffer->GetImageView(0), VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, shadow.FrameBuffer->GetSampler()).
+        // UpdateDescriptorSet().
+        // AllocateDescriptorSet(descriptorSets.model).
+        // AddBufferInfo(0, soldiersUniformBuffer->GetHandle()).
+        // AddImageInfo(1, &textures.model.colorMap.descriptor).
+        // AddImageInfo(2, &textures.model.normalMap.descriptor).
+        // UpdateDescriptorSet().
+        // AllocateDescriptorSet(descriptorSets.background).
+        // AddBufferInfo(0, gBufferUniformBuffer->GetHandle()).
+        // AddImageInfo(1, &textures.background.colorMap.descriptor).
+        // AddImageInfo(2, &textures.background.normalMap.descriptor).
+        // UpdateDescriptorSet().
+        // AllocateDescriptorSet(descriptorSets.shadow).
+        // AddBufferInfo(0, shadowUniformBuffer->GetHandle()).
+        // UpdateDescriptorSet();
+#endif
+
         DescriptorSetBuilder::Get().Begin(m_Core->GetDevice()).
-        AddDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT).
+        AddDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT).
+        AddDescriptorLayoutBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT).
+        AddDescriptorLayoutBinding(2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT).
+        AddDescriptorLayoutBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).
+        AddDescriptorLayoutBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).
+        AddDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10).
+        AddDescriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10).
+        AddDescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10).
+        CreateDescriptorPool(descriptorPools.gBuffer).
+        CreateDescriptorLayout(descriptorSetLayouts.gBuffer).
+        AllocateDescriptorSet(descriptorSets.model).
+        AddBufferInfo(0, modelUniformBuffer->GetHandle()).
+        AddBufferInfo(1, cameraUniformBuffer->GetHandle()).
+        AddBufferInfo(2, instancePositionBuffer->GetHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER).
+        AddImageInfo(3, &textures.model.colorMap.descriptor).
+        AddImageInfo(4, &textures.model.normalMap.descriptor).
+        UpdateDescriptorSet().
+        AllocateDescriptorSet(descriptorSets.background).
+        AddBufferInfo(0, backgroundUniformBuffer->GetHandle()).
+        AddBufferInfo(1, cameraUniformBuffer->GetHandle()).
+        AddBufferInfo(2, instancePositionBuffer->GetHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER).
+        AddImageInfo(3, &textures.background.colorMap.descriptor).
+        AddImageInfo(4, &textures.background.normalMap.descriptor).
+        UpdateDescriptorSet();
+
+        DescriptorSetBuilder::Get().Begin(m_Core->GetDevice()).
+        AddDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).
         AddDescriptorLayoutBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).
         AddDescriptorLayoutBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).
         AddDescriptorLayoutBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).
-        AddDescriptorLayoutBinding(4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT).
-        AddDescriptorLayoutBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT).
-        CreateDescriptorLayout(m_DescriptorSetLayout).
-        AddDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10).
+        AddDescriptorLayoutBinding(4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT).
+        AddDescriptorLayoutBinding(5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT).
+        AddDescriptorLayoutBinding(6, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT).
+        AddDescriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10).
         AddDescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10).
-        CreateDescriptorPool().
-        AllocateDescriptorSet(m_DescriptorSet).
-        AddImageInfo(1, scene.FrameBuffer->GetImageView(0), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, scene.FrameBuffer->GetSampler()).
-        AddImageInfo(2, scene.FrameBuffer->GetImageView(1), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, scene.FrameBuffer->GetSampler()).
-        AddImageInfo(3, scene.FrameBuffer->GetImageView(2), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, scene.FrameBuffer->GetSampler()).
-        AddBufferInfo(4, sceneUniformBuffer->GetHandle()).
-        AddImageInfo(5, shadow.FrameBuffer->GetImageView(0), VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, shadow.FrameBuffer->GetSampler()).
-        UpdateDescriptorSet().
-        AllocateDescriptorSet(descriptorSets.model).
-        AddBufferInfo(0, soldiersUniformBuffer->GetHandle()).
-        AddImageInfo(1, &textures.model.colorMap.descriptor).
-        AddImageInfo(2, &textures.model.normalMap.descriptor).
-        UpdateDescriptorSet().
-        AllocateDescriptorSet(descriptorSets.background).
-        AddBufferInfo(0, gBufferUniformBuffer->GetHandle()).
-        AddImageInfo(1, &textures.background.colorMap.descriptor).
-        AddImageInfo(2, &textures.background.normalMap.descriptor).
-        UpdateDescriptorSet().
-        AllocateDescriptorSet(descriptorSets.shadow).
-        AddBufferInfo(0, shadowUniformBuffer->GetHandle()).
+        AddDescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10).
+        CreateDescriptorPool(descriptorPools.scene).
+        CreateDescriptorLayout(descriptorSetLayouts.scene).
+        AllocateDescriptorSet(descriptorSets.scene).
+        AddImageInfo(0, scene.FrameBuffer->GetImageView(0), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, scene.FrameBuffer->GetSampler()).
+        AddImageInfo(1, scene.FrameBuffer->GetImageView(1), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, scene.FrameBuffer->GetSampler()).
+        AddImageInfo(2, scene.FrameBuffer->GetImageView(2), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, scene.FrameBuffer->GetSampler()).
+        AddImageInfo(3, shadow.FrameBuffer->GetImageView(0), VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, shadow.FrameBuffer->GetSampler()).
+        AddBufferInfo(4, LightMVPsBuffer->GetHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER).
+        AddBufferInfo(5, LightDataBuffer->GetHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER).
+        AddBufferInfo(6, cameraUniformBuffer->GetHandle()).
         UpdateDescriptorSet();
         
+        DescriptorSetBuilder::Get().Begin(m_Core->GetDevice()).
+        AddDescriptorLayoutBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_GEOMETRY_BIT).
+        AddDescriptorLayoutBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_GEOMETRY_BIT).
+        AddDescriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 10).
+        CreateDescriptorPool(descriptorPools.shadow).
+        CreateDescriptorLayout(descriptorSetLayouts.shadow).
+        AllocateDescriptorSet(descriptorSets.shadow).
+        AddBufferInfo(0, instancePositionBuffer->GetHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER).
+        AddBufferInfo(1, LightDataBuffer->GetHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER).
+        UpdateDescriptorSet();
+
         VkPipelineLayoutCreateInfo pipelineLayoutCI{};
         pipelineLayoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutCI.setLayoutCount = 1;
-        pipelineLayoutCI.pSetLayouts = &m_DescriptorSetLayout;
+        pipelineLayoutCI.pSetLayouts = &descriptorSetLayouts.gBuffer;
 
-        VK_CHECK(vkCreatePipelineLayout(m_Core->GetDevice(), &pipelineLayoutCI, nullptr, &m_PipelineLayout));
+        VK_CHECK(vkCreatePipelineLayout(m_Core->GetDevice(), &pipelineLayoutCI, nullptr, &pipelineLayouts.gBuffer));
+
+        pipelineLayoutCI.pSetLayouts = &descriptorSetLayouts.scene;
+        VK_CHECK(vkCreatePipelineLayout(m_Core->GetDevice(), &pipelineLayoutCI, nullptr, &pipelineLayouts.scene));
+
+        pipelineLayoutCI.pSetLayouts = &descriptorSetLayouts.shadow;
+        VK_CHECK(vkCreatePipelineLayout(m_Core->GetDevice(), &pipelineLayoutCI, nullptr, &pipelineLayouts.shadow));
     }
 
     void TestRenderPass::preparePipeline()
@@ -234,7 +284,7 @@ namespace test
         AddDepthStencilState(VK_FALSE, VK_TRUE).
         AddEmptyColorBlendAttachment().
         AddDynamicPipelineState(dynamicStateEnables).
-        Create(m_Core->GetDevice(), m_PipelineLayout, shadow.FrameBuffer->GetRenderPass());
+        Create(m_Core->GetDevice(), pipelineLayouts.shadow, shadow.FrameBuffer->GetRenderPass());
         
         pipelines.scene = GraphicsPipelineBuilder::Get().Reset().
         AddShaderStage(m_Core->GetDevice(), "C:/dev/Vulkan/Vulkan/assets/shaders/deferredrender/scene.vspv", VK_SHADER_STAGE_VERTEX_BIT).
@@ -247,7 +297,7 @@ namespace test
         AddDepthStencilState(VK_TRUE, VK_TRUE).
         AddColorBlendAttachment(VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT).
         AddDynamicPipelineState(dynamicStateEnables).
-        Create(m_Core->GetDevice(), m_PipelineLayout, m_Core->resources.renderPass);
+        Create(m_Core->GetDevice(), pipelineLayouts.scene, m_Core->resources.renderPass);
 
         pipelines.gBuffer = GraphicsPipelineBuilder::Get().Reset().
         AddShaderStage(m_Core->GetDevice(), "C:/dev/Vulkan/Vulkan/assets/shaders/deferredrender/mrt.vspv", VK_SHADER_STAGE_VERTEX_BIT).
@@ -262,82 +312,78 @@ namespace test
         AddColorBlendAttachment(VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT).
         AddColorBlendAttachment(VK_FALSE, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT).
         AddDynamicPipelineState(dynamicStateEnables).
-        Create(m_Core->GetDevice(), m_PipelineLayout, scene.FrameBuffer->GetRenderPass());
+        Create(m_Core->GetDevice(), pipelineLayouts.gBuffer, scene.FrameBuffer->GetRenderPass());
     }
 
     void TestRenderPass::prepareUniformBuffers()
     {
-        SceneUniformBufferStructObject.lights[0].Color = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-        SceneUniformBufferStructObject.lights[1].Color = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-        SceneUniformBufferStructObject.lights[2].Color = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+        m_InstancePositions.emplace_back(0.0f);
+        m_InstancePositions.emplace_back(-7.0f, 0.0, -4.0f, 0.0f);
+        m_InstancePositions.emplace_back(4.0f, 0.0, -6.0f, 0.0f);
 
-        SceneUniformBufferStructObject.lights[0].Position = glm::vec4(-14.0f, -0.5f, 15.0f, 1.0f);
-        SceneUniformBufferStructObject.lights[1].Position = glm::vec4(14.0f, -4.0f, 12.0f, 1.0f);
-        SceneUniformBufferStructObject.lights[2].Position = glm::vec4(0.0f, 5.0f, -4.0f, 1.0f);
-
-        SceneUniformBufferStructObject.lights[0].Target = glm::vec4(-2.0f, 0.0f, 0.0f, 0.0f);
-        SceneUniformBufferStructObject.lights[1].Target = glm::vec4(2.0f, 0.0f, 0.0f, 0.0f);
-        SceneUniformBufferStructObject.lights[2].Target = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-
-        soldiersUniformBufferObject.Model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        soldiersUniformBufferObject.Model = glm::rotate(soldiersUniformBufferObject.Model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-        SceneUniformBufferStructObject.debugShadow = 0;
+        AddLight(glm::vec4(-14.0f, -0.5f, 15.0f, 1.0f), glm::vec4(-2.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::mat4(1.0f));
+        AddLight(glm::vec4(14.0f, -4.0f, 12.0f, 1.0f), glm::vec4(2.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), glm::mat4(1.0f));
+        AddLight(glm::vec4(0.0f, 5.0f, -4.0f, 1.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), glm::mat4(1.0f));
         
-        gBufferUniformBuffer = std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(gBufferUniformBufferStruct));
-        shadowUniformBuffer = std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(ShadowUniformBufferStruct));
-        sceneUniformBuffer = std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(SceneUniformBufferStruct));
-        soldiersUniformBuffer = std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(gBufferUniformBufferStruct));
+        modelUniformBuffer = std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(ModelData));
+        backgroundUniformBuffer = std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(ModelData));
+        
+        cameraUniformBuffer = std::make_unique<V2::VulkanUniformBuffer2>(m_Core, sizeof(CameraData));
+        instancePositionBuffer = std::make_unique<V2::VulkanBuffer2>(m_Core, sizeof(glm::vec4) * m_InstancePositions.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        instancePositionBuffer->copyToBuffer(m_InstancePositions.data(), sizeof(glm::vec4) * m_InstancePositions.size());
+        
+        LightMVPsBuffer = std::make_unique<V2::VulkanBuffer2>(m_Core, sizeof(LightMVPs) * m_LightMVPs.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        LightMVPsBuffer->copyToBuffer(m_LightMVPs.data(), sizeof(LightMVPs) * m_LightMVPs.size());
+        
+        LightDataBuffer = std::make_unique<V2::VulkanBuffer2>(m_Core, sizeof(LightData) * m_LightData.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        LightDataBuffer->copyToBuffer(m_LightData.data(), sizeof(LightData) * m_LightData.size());
+        
+        // soldiersUniformBufferObject.Model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        // soldiersUniformBufferObject.Model = glm::rotate(soldiersUniformBufferObject.Model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        //
+        // SceneUniformBufferStructObject.debugShadow = 0;
     }
 
     void TestRenderPass::updateUniformBuffers()
     {
-        SceneUniformBufferStructObject.lights[0].Position.x = -14.0f + std::abs(sin(glm::radians(timer * 360.0f)) * 20.0f);
-        SceneUniformBufferStructObject.lights[0].Position.z = 15.0f + cos(glm::radians(timer *360.0f)) * 1.0f;
+        m_LightData[0].Position.x = -14.0f + std::abs(sin(glm::radians(timer * 360.0f)) * 20.0f);
+        m_LightData[0].Position.z = 15.0f + cos(glm::radians(timer *360.0f)) * 1.0f;
         
-        SceneUniformBufferStructObject.lights[1].Position.x = 14.0f - std::abs(sin(glm::radians(timer * 360.0f)) * 2.5f);
-        SceneUniformBufferStructObject.lights[1].Position.z = 13.0f + cos(glm::radians(timer *360.0f)) * 4.0f;
+        m_LightData[1].Position.x = 14.0f - std::abs(sin(glm::radians(timer * 360.0f)) * 2.5f);
+        m_LightData[1].Position.z = 13.0f + cos(glm::radians(timer *360.0f)) * 4.0f;
         
-        SceneUniformBufferStructObject.lights[2].Position.x = 0.0f + sin(glm::radians(timer *360.0f)) * 4.0f;
-        SceneUniformBufferStructObject.lights[2].Position.z = 4.0f + cos(glm::radians(timer *360.0f)) * 2.0f;
-
+        m_LightData[2].Position.x = 0.0f + sin(glm::radians(timer *360.0f)) * 4.0f;
+        m_LightData[2].Position.z = 4.0f + cos(glm::radians(timer *360.0f)) * 2.0f;
+        
         for (uint32_t i = 0; i < 3; i++)
         {
             // mvp from light's pov (for shadows)
             glm::mat4 shadowProj = glm::perspective(glm::radians(100.0f), 1.0f, 0.1f, 64.0f);
-            glm::mat4 shadowView = glm::lookAt(glm::vec3(SceneUniformBufferStructObject.lights[i].Position), glm::vec3(SceneUniformBufferStructObject.lights[i].Target), glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::mat4 shadowView = glm::lookAt(glm::vec3(m_LightData[i].Position), glm::vec3(m_LightData[i].Target), glm::vec3(0.0f, 1.0f, 0.0f));
             glm::mat4 shadowModel = glm::mat4(1.0f);
             
-            ShadowUniformBufferStructObject.MVPs[i] = shadowProj * shadowView * shadowModel;
-            ShadowUniformBufferStructObject.InstancePos[0] = glm::vec4(0.0f);
-            ShadowUniformBufferStructObject.InstancePos[1] = glm::vec4(-7.0f, 0.0, -4.0f, 0.0f);
-            ShadowUniformBufferStructObject.InstancePos[2] = glm::vec4(4.0f, 0.0, -6.0f, 0.0f);
-            
-            SceneUniformBufferStructObject.lights[i].MVP = shadowProj * shadowView * shadowModel;
+            m_LightMVPs[i].MVP = shadowProj * shadowView * shadowModel;
         }
 
-        // SceneUniformBufferStructObject.viewPosition = glm::vec4(m_Camera->getPosition(), 0.0f) * glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f);
-        SceneUniformBufferStructObject.viewPosition = m_Camera->getViewPosition();
+        CameraData cameraData{};
+        cameraData.Position = glm::vec4(m_Camera->getViewPosition(), 1.0f);
+        cameraData.View = m_Camera->getViewMatrix();
+        cameraData.Projection = m_Camera->getProjectionMatrix();
 
-        gBufferUniformBufferStructObject.InstancePos[0] = glm::vec4(0.0f);
-        gBufferUniformBufferStructObject.InstancePos[1] = glm::vec4(-7.0f, 0.0, -4.0f, 0.0f);
-        gBufferUniformBufferStructObject.InstancePos[2] = glm::vec4(4.0f, 0.0, -6.0f, 0.0f);
-
-        gBufferUniformBufferStructObject.Model = glm::mat4(1.0f);//glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        gBufferUniformBufferStructObject.View = m_Camera->getViewMatrix();
-        gBufferUniformBufferStructObject.Projection = m_Camera->getProjectionMatrix();
-
-        soldiersUniformBufferObject.InstancePos[0] = glm::vec4(0.0f);
-        soldiersUniformBufferObject.InstancePos[1] = glm::vec4(-7.0f, 0.0, -4.0f, 0.0f);
-        soldiersUniformBufferObject.InstancePos[2] = glm::vec4(4.0f, 0.0, -6.0f, 0.0f);
+        ModelData modelModelData{};
+        modelModelData.ModelMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        modelModelData.ModelMatrix = glm::rotate(modelModelData.ModelMatrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         
-        soldiersUniformBufferObject.View = m_Camera->getViewMatrix();
-        soldiersUniformBufferObject.Projection = m_Camera->getProjectionMatrix();
+        ModelData backgroundModelData{};
+        backgroundModelData.ModelMatrix = glm::mat4(1.0f);
+
+        modelUniformBuffer->copyToBuffer(&modelModelData, sizeof(ModelData));
+        backgroundUniformBuffer->copyToBuffer(&backgroundModelData, sizeof(ModelData));
         
-        gBufferUniformBuffer->copyToBuffer(&gBufferUniformBufferStructObject, sizeof(gBufferUniformBufferStructObject));
-        soldiersUniformBuffer->copyToBuffer(&soldiersUniformBufferObject, sizeof(soldiersUniformBufferObject));
-        shadowUniformBuffer->copyToBuffer(&ShadowUniformBufferStructObject, sizeof(ShadowUniformBufferStructObject));
-        sceneUniformBuffer->copyToBuffer(&SceneUniformBufferStructObject, sizeof(SceneUniformBufferStructObject));
+        cameraUniformBuffer->copyToBuffer(&cameraData, sizeof(cameraData));
+
+        LightMVPsBuffer->copyToBuffer(m_LightMVPs.data(), sizeof(LightMVPs) * m_LightMVPs.size());
+        LightDataBuffer->copyToBuffer(m_LightData.data(), sizeof(LightData) * m_LightData.size());
     }
 
     void TestRenderPass::buildDeferredCommandBuffers()
@@ -409,11 +455,11 @@ namespace test
 
             vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.shadow);
             // Background
-            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &descriptorSets.shadow, 0, NULL);
+            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayouts.shadow, 0, 1, &descriptorSets.shadow, 0, NULL);
             models.background->draw(currentCmdBuffer);
 
             // Objects
-            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &descriptorSets.shadow, 0, NULL);
+            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayouts.shadow, 0, 1, &descriptorSets.shadow, 0, NULL);
             models.model->bindBuffers(currentCmdBuffer);
             vkCmdDrawIndexed(currentCmdBuffer, models.model->indices.count, 3, 0, 0, 0);
             
@@ -452,11 +498,11 @@ namespace test
 
             vkCmdBindPipeline(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.gBuffer);
             // Background
-            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &descriptorSets.background, 0, NULL);
+            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayouts.gBuffer, 0, 1, &descriptorSets.background, 0, NULL);
             models.background->draw(currentCmdBuffer);
 
             // Objects
-            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &descriptorSets.model, 0, NULL);
+            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayouts.gBuffer, 0, 1, &descriptorSets.model, 0, NULL);
             models.model->bindBuffers(currentCmdBuffer);
             vkCmdDrawIndexed(currentCmdBuffer, models.model->indices.count, 3, 0, 0, 0);
             
@@ -476,7 +522,7 @@ namespace test
 
             vkCmdBeginRenderPass(currentCmdBuffer, &renderPassBI, VK_SUBPASS_CONTENTS_INLINE);
 
-            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSet, 0, nullptr);
+            vkCmdBindDescriptorSets(currentCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayouts.scene, 0, 1, &descriptorSets.scene, 0, nullptr);
 
             // Final composition as full screen quad
             // Note: Also used for debug display if debugDisplayTarget > 0
@@ -490,13 +536,14 @@ namespace test
             
             vkCmdEndRenderPass(currentCmdBuffer);
             
-
-            
-
-            
-            
             VK_CHECK(vkEndCommandBuffer(currentCmdBuffer));
         }
         
+    }
+
+    void TestRenderPass::AddLight(glm::vec4 position, glm::vec4 target, glm::vec4 color, glm::mat4 MVP)
+    {
+        m_LightData.emplace_back(position, target, color);
+        m_LightMVPs.emplace_back(MVP);
     }
 }

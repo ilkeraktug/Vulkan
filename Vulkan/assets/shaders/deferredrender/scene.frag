@@ -1,33 +1,51 @@
-Texture2D PositionTexture : register(t1);
-SamplerState PositionTextureSampler : register(s1);
+Texture2D PositionTexture : register(t0);
+SamplerState PositionTextureSampler : register(s0);
 
-Texture2D NormalTexture : register(t2);
-SamplerState NormalTextureSampler : register(s2);
+Texture2D NormalTexture : register(t1);
+SamplerState NormalTextureSampler : register(s1);
 
-Texture2D AlbedoTexture : register(t3);
-SamplerState AlbedoTextureSampler : register(s3);
+Texture2D AlbedoTexture : register(t2);
+SamplerState AlbedoTextureSampler : register(s2);
 
-Texture2DArray ShadowMapArray : register(t5);
-SamplerState ShadowMapSampler : register(s5);
+Texture2DArray ShadowMapArray : register(t3);
+SamplerState ShadowMapSampler : register(s3);
+
+StructuredBuffer<float4x4> LightMVPs : register(t4);
+StructuredBuffer<float4> LightData : register(t5);
+
+struct CameraData
+{
+    float4 Position;
+    float4x4 View;
+    float4x4 Projection;
+};
+
+cbuffer CameraData : register(b6)
+{
+    CameraData cameraDataUBO;   
+}
 
 struct Light
 {
     float4 Position;
     float4 Target;
     float4 Color;
-    float4x4 MVP;
 };
 
-struct UBO
+Light getLightData(int index)
 {
-    float3 viewPosition;
-    Light lights[3];
-    int debugShadow;
-};
+    Light light = (Light)0;
+    
+    light.Position = LightData.Load(index * 3);
+    light.Target = LightData.Load(index * 3 + 1);
+    light.Color = LightData.Load(index * 3 + 2);
+    
+    return light;
+}
 
-cbuffer ubo : register(b4) 
+float4x4 getLightMVP(int index)
 {
-    UBO ubo;
+    return LightMVPs.Load(index);
 }
 
 struct VSOutput
@@ -36,10 +54,9 @@ struct VSOutput
     [[vk::location(0)]] float2 UV : TEXCOORD0;
 };
 
-
 float shadowScale(float3 fragPos, int layer, float2 offset)
 {
-    float4 fragOnClipSpace = mul(ubo.lights[layer].MVP, float4(fragPos, 1.0f));
+    float4 fragOnClipSpace = mul(getLightMVP(layer), float4(fragPos, 1.0f));
     
     float4 fragOnNDC = fragOnClipSpace / fragOnClipSpace.w;
     float2 fragAsUV = fragOnNDC.xy * 0.5f + 0.5f;
@@ -82,7 +99,7 @@ float filterPCF(float3 fragPos, int layer)
 
 float3 calculateColor(float3 color, float3 fragPos)
 {
-    if(ubo.debugShadow == 0)
+    if(true)//ubo.debugShadow == 0)
     {
         for(int i = 0; i < 3; i++)
         {
@@ -104,14 +121,16 @@ float4 main(VSOutput input) : SV_TARGET
     float depth2 = ShadowMapArray.Sample(ShadowMapSampler, float3(input.UV, 2)).r;
     
     float3 N = normalize(normal);
-    float3 FragPosToViewDirection = normalize(ubo.viewPosition - fragPos);
+    float3 FragPosToViewDirection = normalize(cameraDataUBO.Position.xyz - fragPos);
     
     float3 fragColor = float3(0.0f, 0.0f, 0.0f);
     
     for(int i = 0; i < 3; i++)
     {
-        float3 LightToTargetDirection = normalize(ubo.lights[i].Target - ubo.lights[i].Position).xyz;
-        float3 LightToFrag = fragPos - ubo.lights[i].Position.xyz;
+        Light lightData = getLightData(i);
+        
+        float3 LightToTargetDirection = normalize(lightData.Target - lightData.Position).xyz;
+        float3 LightToFrag = fragPos - lightData.Position.xyz;
         float LightToFragDistance = length(LightToFrag);
         float3 LightToFragDirection = normalize(LightToFrag);
         
@@ -132,7 +151,7 @@ float4 main(VSOutput input) : SV_TARGET
         
         float colorMulp = max(0.0f, dot(LightToFragDirection, N));
         
-        fragColor += ((spec + colorMulp) * AngleEffect * DistanceEffect) * ubo.lights[i].Color.rgb * albedo.rgb;
+        fragColor += ((spec + colorMulp) * AngleEffect * DistanceEffect) * lightData.Color.rgb * albedo.rgb;
     }
     
     fragColor = calculateColor(fragColor, fragPos);

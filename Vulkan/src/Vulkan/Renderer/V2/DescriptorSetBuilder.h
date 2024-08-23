@@ -59,11 +59,13 @@ public:
 
     DescriptorSetBuilder& AddImageInfo(uint32_t binding, VkDescriptorImageInfo* imageInfo);
     DescriptorSetBuilder& AddImageInfo(uint32_t binding, VkImageView imageView, VkImageLayout layout, VkSampler sampler = VK_NULL_HANDLE);
-    DescriptorSetBuilder& AddBufferInfo(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
-    DescriptorSetBuilder& AddBufferInfo(uint32_t binding, VkBuffer buffer, VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE);
+    DescriptorSetBuilder& AddBufferInfo(uint32_t binding, VkDescriptorBufferInfo* bufferInfo, VkDescriptorType bufferType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    DescriptorSetBuilder& AddBufferInfo(uint32_t binding, VkBuffer buffer, VkDescriptorType bufferType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE);
     DescriptorSetBuilder& UpdateDescriptorSet();
     
     DescriptorSetBuilder& ResetDescriptorWrite();
+
+    static VkDescriptorSet AllocateDescriptorSet(VkDevice device, VkDescriptorPool pool, VkDescriptorSetLayout* layout);
 
 private:
     VkDevice m_Device = VK_NULL_HANDLE;

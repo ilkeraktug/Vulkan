@@ -1,7 +1,7 @@
-Texture2D colorTexture : register(t1);
-SamplerState colorTextureSampler : register(s1);
-Texture2D normalMapTexture : register(t2);
-SamplerState normalMapSampler : register(s2);
+Texture2D colorTexture : register(t3);
+SamplerState colorTextureSampler : register(s3);
+Texture2D normalMapTexture : register(t4);
+SamplerState normalMapSampler : register(s4);
 
 struct VSOutput
 {

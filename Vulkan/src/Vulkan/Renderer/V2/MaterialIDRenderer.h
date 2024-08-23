@@ -28,15 +28,12 @@ private:
     void setupFramebuffer();
     void setupLayouts();
     void updateUniformBuffer();
-    void setupDescriptorSets();
     void setupGraphicsPipeline();
 
     void createDescriptorSetForModel();
     void createDescriptorSetForNode(VkDescriptorSet& descriptorSet, const std::unique_ptr<V2::VulkanUniformBuffer2>& uniformBuffer);
 
     void draw(VkCommandBuffer cmdBuffer);
-
-    void updateUniformBuffer(const vkglTF::Model& model);
 
 private:
     VulkanCore* m_Core;
